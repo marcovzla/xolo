@@ -14,10 +14,10 @@ def deduplicate_preserve_order(xs: Iterable[H]) -> list[H]:
     and the order of the remaining elements is preserved.
 
     Args:
-        iterable (Iterable[T]): The input iterable containing elements to be deduplicated.
+        iterable (Iterable[H]): The input iterable containing elements to be deduplicated.
 
     Returns:
-        list[T]: A list containing the unique elements from the input iterable in their
+        list[H]: A list containing the unique elements from the input iterable in their
         original order.
 
     Example:
