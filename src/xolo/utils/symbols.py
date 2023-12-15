@@ -61,10 +61,8 @@ def prepare_symbol(
         **kwargs,
     )
 
-    if style in ('pascal', 'camel'):
-        symbol = ''.join(s.capitalize() for s in symbol.split(separator))
-        if style == 'camel':
-            symbol = symbol[0].lower() + symbol[1:]
+    if style in ('camel', 'pascal'):
+        symbol = join_symbol(symbol.split(separator), style)
 
     return symbol
 
