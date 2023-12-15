@@ -2,6 +2,9 @@
 name = "xolo"
 version = "0.0.1"
 dependencies = [
+    "docstring_parser",
+    "jsonref",
+    "pydantic",
     "python-slugify",
     "regex",
 ]
