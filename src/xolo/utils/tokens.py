@@ -108,6 +108,27 @@ VALID_TOKEN_TAGS = set('OBILUES')
 
 
 class LabelingSchema(StrEnum):
+    """
+    An enumeration of different labeling schemas used in text annotation for NLP tasks.
+
+    This enumeration defines various commonly used schemas for labeling sequences of text, such as in Named Entity 
+    Recognition (NER), part-of-speech tagging, and other NLP tasks. Each schema has its own set of rules and formats 
+    for representing labels associated with text tokens.
+
+    Members:
+        IO: The Inside-Outside schema, a basic labeling format where each token is labeled as 'Inside' an entity or 'Outside'.
+        IOB1: The Inside-Outside-Beginning (version 1) schema, where 'B-' tags mark the beginning of entities following 
+              another entity of the same or different type.
+        IOB2: An extension of IOB1, where 'B-' tags are used at the beginning of every entity, providing clearer 
+              boundaries between entities.
+        BILOU: The Beginning-Inside-Last-Outside-Unit schema, offering more detailed annotation by marking the beginning, 
+               inside, last, and unit (single-token) entities.
+        IOBES: Similar to BILOU, but with 'End' instead of 'Last', marking the Inside-Outside-Beginning-End-Single tokens.
+
+    Notes:
+        - Each labeling schema has specific use cases and is chosen based on the requirements of the NLP task and the 
+          characteristics of the dataset.
+    """
     IO = 'io'
     IOB1 = 'iob1'
     IOB2 = 'iob2'
@@ -118,6 +139,24 @@ class LabelingSchema(StrEnum):
 
 @dataclass(frozen=True, order=True)
 class TokenSpan(Span):
+    """
+    A data class representing a span of tokens, typically used in Natural Language Processing (NLP) tasks like Named 
+    Entity Recognition (NER).
+
+    This class inherits from the `Span` class, which provides the basic structure for representing a span in a sequence
+    of tokens. `TokenSpan` extends this with an additional `label` attribute, used for labeling the span with a specific classification.
+
+    Attributes:
+        start (int): Inherited from `Span`. The starting index of the span in the token sequence.
+        stop (int): Inherited from `Span`. The stopping index of the span in the token sequence.
+        label (Optional[str]): An optional label for the span, typically representing an entity type or similar 
+                               classification in NLP tasks.
+
+    Notes:
+        - The `start` and `stop` attributes are inherited from the `Span` class and represent the span's boundaries.
+        - The `label` attribute is used to assign a specific classification or entity type to the span, which is 
+          crucial in tasks like NER or text classification.
+    """
     label: Optional[str] = None
 
 
