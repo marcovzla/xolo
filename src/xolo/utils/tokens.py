@@ -864,3 +864,198 @@ def iobes_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
         raise ValueError(f'Invalid transition from {labels[-1]!r} to END')
 
     return spans
+
+
+
+def spans_to_io(num_tokens: int, spans: Sequence[TokenSpan], prepend_tag: bool = False) -> list[str]:
+    """
+    Convert a sequence of TokenSpan objects into a list of IO (Inside-Outside) formatted labels.
+
+    This function takes a sequence of TokenSpan objects and generates a corresponding list of labels in the IO format. 
+    Each TokenSpan object represents a span of tokens with a specific entity type. The function supports an option to 
+    prepend the 'I-' tag to labels inside spans.
+
+    Args:
+        num_tokens (int): The number of tokens in the sequence for which labels are to be generated.
+        spans (Sequence[TokenSpan]): A sequence of TokenSpan objects representing the spans of entities.
+        prepend_tag (bool, optional): If True, the 'I-' tag is prepended to labels inside spans. Defaults to False.
+
+    Returns:
+        list[str]: A list of labels in the IO format, where each label corresponds to a token in the sequence.
+
+    Raises:
+        ValueError: If there are overlapping spans in the provided sequence of TokenSpans.
+
+    Notes:
+        - Each TokenSpan is assumed to have `start`, `stop`, and `label` attributes.
+        - 'O' is used for tokens outside any span.
+        - Overlapping spans are not allowed and will result in a ValueError.
+    """
+    labels = ['O'] * num_tokens
+    for span in spans:
+        for i in range(span.start, span.stop):
+            if labels[i] != 'O':
+                raise ValueError('Overlapping spans detected')
+            if span.label:
+                label = f'I-{span.label}' if prepend_tag else span.label
+            else:
+                label = 'I'
+            labels[i] = label
+    return labels
+
+
+
+def spans_to_iob1(num_tokens: int, spans: Sequence[TokenSpan]) -> list[str]:
+    """
+    Convert a list of TokenSpan objects into a list of IOB1 (Inside-Outside-Beginning) formatted labels.
+
+    This function takes a list of TokenSpan objects and generates a corresponding list of labels in the IOB1 format.
+    In the IOB1 format, 'B-' is used to mark the beginning of a span only after another 'B-' or an 'I-' tag, but not 
+    directly after an 'O' tag. The 'I-' tag is used for tokens inside the span. Tokens outside any span are labeled as 'O'.
+
+    Args:
+        num_tokens (int): The number of tokens in the sequence for which labels are to be generated.
+        spans (list[TokenSpan]): A list of TokenSpan objects representing the spans of entities.
+
+    Returns:
+        list[str]: A list of labels in the IOB1 format, where each label corresponds to a token in the sequence.
+
+    Raises:
+        ValueError: If there are overlapping spans in the provided list of TokenSpans.
+
+    Notes:
+        - Each TokenSpan is assumed to have `start`, `stop`, and `label` attributes.
+        - Overlapping spans are not allowed and will result in a ValueError.
+        - The function correctly identifies the beginning of new spans following the IOB1 format rules.
+    """
+    labels = ['O'] * num_tokens
+    for span in spans:
+        for i in range(span.start, span.stop):
+            if labels[i] != 'O':
+                raise ValueError('Overlapping spans detected')
+            if i == span.start and i > 0 and labels[i-1] != 'O':
+                label = f'B-{span.label}' if span.label else 'B'
+            else:
+                label = f'I-{span.label}' if span.label else 'I'
+            labels[i] = label
+    return labels
+
+
+
+def spans_to_iob2(num_tokens: int, spans: Sequence[TokenSpan]) -> list[str]:
+    """
+    Convert a sequence of TokenSpan objects into a list of IOB2 (Inside-Outside-Beginning 2) formatted labels.
+
+    This function takes a sequence of TokenSpan objects and generates a corresponding list of labels in the IOB2 format.
+    In the IOB2 format, every beginning of a span is marked with a 'B-' tag, regardless of the preceding tag. The 'I-' tag
+    is used for tokens inside the span. Tokens outside any span are labeled as 'O'.
+
+    Args:
+        num_tokens (int): The number of tokens in the sequence for which labels are to be generated.
+        spans (Sequence[TokenSpan]): A sequence of TokenSpan objects representing the spans of entities.
+
+    Returns:
+        list[str]: A list of labels in the IOB2 format, where each label corresponds to a token in the sequence.
+
+    Raises:
+        ValueError: If there are overlapping spans in the provided sequence of TokenSpans.
+
+    Notes:
+        - Each TokenSpan is assumed to have `start`, `stop`, and `label` attributes.
+        - Overlapping spans are not allowed and will result in a ValueError.
+        - The function correctly marks the beginning of each new entity span with 'B-' or 'B' (if no label is provided),
+          according to the IOB2 format rules.
+    """
+    labels = ['O'] * num_tokens
+    for span in spans:
+        for i in range(span.start, span.stop):
+            if labels[i] != 'O':
+                raise ValueError('Overlapping spans detected')
+            if i == span.start:
+                label = f'B-{span.label}' if span.label else 'B'
+            else:
+                label = f'I-{span.label}' if span.label else 'I'
+            labels[i] = label
+    return labels
+
+
+
+def spans_to_bilou(num_tokens: int, spans: Sequence[TokenSpan]) -> list[str]:
+    """
+    Convert a sequence of TokenSpan objects into a list of BILOU (Beginning-Inside-Last-Outside-Unit) formatted labels.
+
+    This function takes a sequence of TokenSpan objects and generates a corresponding list of labels in the BILOU format.
+    The BILOU format provides a detailed classification of tokens in entity spans: 'B-' for Beginning, 'I-' for Inside, 
+    'L-' for Last, 'U-' for Unit (single-token entities), and 'O' for tokens Outside any entity span.
+
+    Args:
+        num_tokens (int): The number of tokens in the sequence for which labels are to be generated.
+        spans (Sequence[TokenSpan]): A sequence of TokenSpan objects representing the spans of entities.
+
+    Returns:
+        list[str]: A list of labels in the BILOU format, where each label corresponds to a token in the sequence.
+
+    Raises:
+        ValueError: If there are overlapping spans in the provided sequence of TokenSpans.
+
+    Notes:
+        - Each TokenSpan is assumed to have `start`, `stop`, and `label` attributes, along with a `length` method.
+        - Overlapping spans are not allowed and will result in a ValueError.
+        - The function accurately assigns BILOU tags based on the position of the token within the span.
+    """
+    labels = ['O'] * num_tokens
+    for span in spans:
+        for i in range(span.start, span.stop):
+            if labels[i] != 'O':
+                raise ValueError('Overlapping spans detected')
+            if span.length() == 1:
+                label = f'U-{span.label}' if span.label else 'U'
+            elif i == span.start:
+                label = f'B-{span.label}' if span.label else 'B'
+            elif i == span.stop - 1:
+                label = f'L-{span.label}' if span.label else 'L'
+            else:
+                label = f'I-{span.label}' if span.label else 'I'
+            labels[i] = label
+    return labels
+
+
+
+def spans_to_iobes(num_tokens: int, spans: list[TokenSpan]) -> list[str]:
+    """
+    Convert a list of TokenSpan objects into a list of IOBES (Inside-Outside-Beginning-End-Single) formatted labels.
+
+    This function takes a list of TokenSpan objects and generates a corresponding list of labels in the IOBES format.
+    The IOBES format provides a detailed classification of tokens in entity spans: 'B-' for Beginning, 'I-' for Inside,
+    'E-' for End, 'S-' for Single-token entities, and 'O' for tokens Outside any entity span.
+
+    Args:
+        num_tokens (int): The number of tokens in the sequence for which labels are to be generated.
+        spans (list[TokenSpan]): A list of TokenSpan objects representing the spans of entities.
+
+    Returns:
+        list[str]: A list of labels in the IOBES format, where each label corresponds to a token in the sequence.
+
+    Raises:
+        ValueError: If there are overlapping spans in the provided list of TokenSpans.
+
+    Notes:
+        - Each TokenSpan is assumed to have `start`, `stop`, and `label` attributes, along with a `length` method.
+        - Overlapping spans are not allowed and will result in a ValueError.
+        - The function accurately assigns IOBES tags based on the position of the token within the span.
+    """
+    labels = ['O'] * num_tokens
+    for span in spans:
+        for i in range(span.start, span.stop):
+            if labels[i] != 'O':
+                raise ValueError('Overlapping spans detected')
+            if span.length() == 1:
+                label = f'S-{span.label}' if span.label else 'S'
+            elif i == span.start:
+                label = f'B-{span.label}' if span.label else 'B'
+            elif i == span.stop - 1:
+                label = f'E-{span.label}' if span.label else 'E'
+            else:
+                label = f'I-{span.label}' if span.label else 'I'
+            labels[i] = label
+    return labels
