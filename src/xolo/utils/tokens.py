@@ -107,7 +107,7 @@ VALID_TOKEN_TAGS = set('OBILUES')
 
 
 
-class TaggingSchema(StrEnum):
+class LabelingSchema(StrEnum):
     IO = 'io'
     IOB1 = 'iob1'
     IOB2 = 'iob2'
@@ -156,120 +156,118 @@ def parse_token_label(label: str, sep: str = '-') -> tuple[Optional[str], Option
 
 
 
-
-def valid_label(label: str, schema: TaggingSchema) -> bool:
+def valid_label(label: str, schema: LabelingSchema) -> bool:
     """
-    Determine if a given label is valid according to a specified tagging schema.
+    Determine if a given label is valid according to a specified labeling schema.
 
-    This function evaluates whether a label conforms to the rules of the tagging schema provided. Different tagging schemas
-    like IO, IOB1, IOB2, BILOU, IOBES, and UNTAGGED have specific formats and rules for labels. This function delegates the
+    This function evaluates whether a label conforms to the rules of the labeling schema provided. Different labeling schemas
+    like IO, IOB1, IOB2, BILOU, and IOBES have specific formats and rules for labels. This function delegates the
     validation to the corresponding schema-specific function based on the provided schema.
 
     Args:
         label (str): The label to be validated.
-        schema (TaggingSchema): The tagging schema to be used for validating the label.
+        schema (LabelingSchema): The labeling schema to be used for validating the label.
 
     Returns:
-        bool: True if the label is valid according to the specified tagging schema; otherwise, False.
+        bool: True if the label is valid according to the specified labeling schema; otherwise, False.
 
     Raises:
-        AssertionError: If an unsupported tagging schema is provided.
+        AssertionError: If an unsupported labeling schema is provided.
 
     Notes:
         - The function uses a `match` statement to delegate to the appropriate schema-specific validation function.
           An `assert_never` is used to ensure all possible schema cases are covered.
-        - The UNTAGGED schema is included to handle cases where labels are untagged or do not follow a structured format.
     """
     match schema:
-        case TaggingSchema.IO:
+        case LabelingSchema.IO:
             return io_valid_label(label)
-        case TaggingSchema.IOB1:
+        case LabelingSchema.IOB1:
             return iob1_valid_label(label)
-        case TaggingSchema.IOB2:
+        case LabelingSchema.IOB2:
             return iob2_valid_label(label)
-        case TaggingSchema.BILOU:
+        case LabelingSchema.BILOU:
             return bilou_valid_label(label)
-        case TaggingSchema.IOBES:
+        case LabelingSchema.IOBES:
             return iobes_valid_label(label)
         case _:
             assert_never(schema)
 
 
 
-def valid_transition(from_label: Optional[str], to_label: Optional[str], schema: TaggingSchema) -> bool:
+def valid_transition(from_label: Optional[str], to_label: Optional[str], schema: LabelingSchema) -> bool:
     """
-    Determine if a transition between two labels is valid according to a specified tagging schema.
+    Determine if a transition between two labels is valid according to a specified labeling schema.
 
-    This function evaluates the validity of transitioning from `from_label` to `to_label` based on the tagging schema
-    provided. Different tagging schemas like IO, IOB1, IOB2, BILOU, IOBES, and UNTAGGED have specific rules for label transitions.
+    This function evaluates the validity of transitioning from `from_label` to `to_label` based on the labeling schema
+    provided. Different labeling schemas like IO, IOB1, IOB2, BILOU, and IOBES have specific rules for label transitions.
     This function delegates the validation to the corresponding schema-specific function based on the provided schema.
 
     Args:
         from_label (Optional[str]): The label from which the transition starts. If `None`, it implies the beginning of a sequence.
         to_label (Optional[str]): The label to which the transition goes. If `None`, it implies the end of a sequence.
-        schema (TaggingSchema): The tagging schema to be used for validating the transition.
+        schema (LabelingSchema): The labeling schema to be used for validating the transition.
 
     Returns:
-        bool: True if the transition is valid according to the specified tagging schema; otherwise, False.
+        bool: True if the transition is valid according to the specified labeling schema; otherwise, False.
 
     Raises:
-        AssertionError: If an unsupported tagging schema is provided.
+        AssertionError: If an unsupported labeling schema is provided.
 
     Notes:
         - The function uses a `match` statement to delegate to the appropriate schema-specific validation function.
           An `assert_never` is used to ensure all possible schema cases are covered.
     """
     match schema:
-        case TaggingSchema.IO:
+        case LabelingSchema.IO:
             return io_valid_transition(from_label, to_label)
-        case TaggingSchema.IOB1:
+        case LabelingSchema.IOB1:
             return iob1_valid_transition(from_label, to_label)
-        case TaggingSchema.IOB2:
+        case LabelingSchema.IOB2:
             return iob2_valid_transition(from_label, to_label)
-        case TaggingSchema.BILOU:
+        case LabelingSchema.BILOU:
             return bilou_valid_transition(from_label, to_label)
-        case TaggingSchema.IOBES:
+        case LabelingSchema.IOBES:
             return iobes_valid_transition(from_label, to_label)
         case _:
             assert_never(schema)
 
 
 
-def load_spans(labels: Sequence[str], scheme: TaggingSchema) -> list[TokenSpan]:
+def load_spans(labels: Sequence[str], scheme: LabelingSchema) -> list[TokenSpan]:
     """
-    Convert a sequence of labels into a list of TokenSpan objects according to a specified tagging schema.
+    Convert a sequence of labels into a list of TokenSpan objects according to a specified labeling schema.
 
-    This function delegates the conversion of labels to TokenSpans based on the provided tagging schema, such as IO, IOB1, IOB2, 
-    BILOU, or IOBES. Each tagging schema has specific rules and formats for representing entity spans in labeled sequences, 
+    This function delegates the conversion of labels to TokenSpans based on the provided labeling schema, such as IO, IOB1, IOB2, 
+    BILOU, or IOBES. Each labeling schema has specific rules and formats for representing entity spans in labeled sequences, 
     commonly used in tasks like Named Entity Recognition (NER).
 
     Args:
         labels (Sequence[str]): A sequence of labels to be converted into TokenSpans.
-        scheme (TaggingSchema): The tagging schema to use for the conversion.
+        scheme (LabelingSchema): The labeling schema to use for the conversion.
 
     Returns:
         list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type,
                          as defined by the specified tagging schema.
 
     Raises:
-        AssertionError: If an unsupported tagging schema is provided.
+        AssertionError: If an unsupported labeling schema is provided.
 
     Notes:
         - TokenSpan is assumed to be a named tuple or similar object with fields `start`, `end`, and `entity`.
-        - This function is capable of handling different tagging schemas, making it versatile for various NER and
+        - This function is capable of handling different labeling schemas, making it versatile for various NER and
           related tasks.
-        - The `match` statement efficiently directs to the corresponding function for each tagging schema.
+        - The `match` statement efficiently directs to the corresponding function for each labeling schema.
     """
     match scheme:
-        case TaggingSchema.IO:
+        case LabelingSchema.IO:
             return io_to_spans(labels)
-        case TaggingSchema.IOB1:
+        case LabelingSchema.IOB1:
             return iob1_to_spans(labels)
-        case TaggingSchema.IOB2:
+        case LabelingSchema.IOB2:
             return iob2_to_spans(labels)
-        case TaggingSchema.BILOU:
+        case LabelingSchema.BILOU:
             return bilou_to_spans(labels)
-        case TaggingSchema.IOBES:
+        case LabelingSchema.IOBES:
             return iobes_to_spans(labels)
         case _:
             assert_never(scheme)
