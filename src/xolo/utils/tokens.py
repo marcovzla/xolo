@@ -122,6 +122,37 @@ class TokenSpan(Span):
 
 
 
+def convert_labels(labels: Sequence[str], from_schema: LabelingSchema, to_schema: LabelingSchema) -> list[str]:
+    """
+    Convert a sequence of labels from one labeling schema to another.
+
+    This function takes a sequence of labels formatted according to a specified 'from_schema' and converts them into
+    another format as defined by the 'to_schema'. The conversion process involves parsing the labels into TokenSpan
+    objects according to the original schema and then generating a new sequence of labels from these spans according
+    to the target schema.
+
+    Args:
+        labels (Sequence[str]): A sequence of labels to be converted.
+        from_schema (LabelingSchema): The labeling schema of the input labels.
+        to_schema (LabelingSchema): The labeling schema for the output labels.
+
+    Returns:
+        list[str]: A list of labels formatted according to the 'to_schema'.
+
+    Notes:
+        - This function is useful in scenarios where labeled data in one format needs to be transformed into another 
+          format, which is common in NER tasks where different systems or approaches require different labeling schemas.
+        - The function relies on `parse_labels` to interpret the original labels and `generate_labels` to produce 
+          the labels in the new schema.
+    """
+    return generate_labels(
+        num_tokens=len(labels),
+        spans=parse_labels(labels, from_schema),
+        schema=to_schema,
+    )
+
+
+
 def parse_token_label(label: str, sep: str = '-') -> tuple[Optional[str], Optional[str]]:
     """
     Parse a token label into its constituent parts (tag and entity) based on a given separator.
@@ -233,32 +264,24 @@ def valid_transition(from_label: Optional[str], to_label: Optional[str], schema:
 
 
 
-def load_spans(labels: Sequence[str], scheme: LabelingSchema) -> list[TokenSpan]:
+def parse_labels(labels: Sequence[str], schema: LabelingSchema) -> list[TokenSpan]:
     """
-    Convert a sequence of labels into a list of TokenSpan objects according to a specified labeling schema.
+    Parse a sequence of labels into a list of TokenSpan objects according to a specified labeling schema.
 
-    This function delegates the conversion of labels to TokenSpans based on the provided labeling schema, such as IO, IOB1, IOB2, 
-    BILOU, or IOBES. Each labeling schema has specific rules and formats for representing entity spans in labeled sequences, 
-    commonly used in tasks like Named Entity Recognition (NER).
+    This function takes a sequence of labels and converts them into a structured format, specifically into 
+    TokenSpan objects that represent spans of entities, based on the provided labeling schema. Supported 
+    schemas include IO, IOB1, IOB2, BILOU, and IOBES, each with its own specific rules for representing 
+    entity spans in labeled sequences.
 
     Args:
-        labels (Sequence[str]): A sequence of labels to be converted into TokenSpans.
-        scheme (LabelingSchema): The labeling schema to use for the conversion.
+        labels (Sequence[str]): A sequence of labels to be parsed into TokenSpans.
+        schema (LabelingSchema): The labeling schema to use for parsing the labels.
 
     Returns:
         list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type,
-                         as defined by the specified tagging schema.
-
-    Raises:
-        AssertionError: If an unsupported labeling schema is provided.
-
-    Notes:
-        - TokenSpan is assumed to be a named tuple or similar object with fields `start`, `end`, and `entity`.
-        - This function is capable of handling different labeling schemas, making it versatile for various NER and
-          related tasks.
-        - The `match` statement efficiently directs to the corresponding function for each labeling schema.
+                         as defined by the specified labeling schema.
     """
-    match scheme:
+    match schema:
         case LabelingSchema.IO:
             return io_to_spans(labels)
         case LabelingSchema.IOB1:
@@ -270,7 +293,40 @@ def load_spans(labels: Sequence[str], scheme: LabelingSchema) -> list[TokenSpan]
         case LabelingSchema.IOBES:
             return iobes_to_spans(labels)
         case _:
-            assert_never(scheme)
+            assert_never(schema)
+
+
+
+def generate_labels(num_tokens: int, spans: Sequence[TokenSpan], schema: LabelingSchema) -> list[str]:
+    """
+    Generate a sequence of labels from a sequence of TokenSpan objects according to a specified labeling schema.
+
+    This function converts structured data, specifically TokenSpan objects representing spans of entities, 
+    into a sequence of labels formatted according to the given labeling schema. Supported schemas include IO, 
+    IOB1, IOB2, BILOU, and IOBES. Each schema has its specific formatting rules for labeling token sequences.
+
+    Args:
+        num_tokens (int): The number of tokens in the sequence for which labels are to be generated.
+        spans (Sequence[TokenSpan]): A sequence of TokenSpan objects representing the span of entities.
+        schema (LabelingSchema): The labeling schema to use for generating the labels.
+
+    Returns:
+        list[str]: A list of labels formatted according to the specified labeling schema, where each label corresponds 
+                   to a token in the sequence.
+    """
+    match schema:
+        case LabelingSchema.IO:
+            return spans_to_io(num_tokens, spans)
+        case LabelingSchema.IOB1:
+            return spans_to_iob1(num_tokens, spans)
+        case LabelingSchema.IOB2:
+            return spans_to_iob2(num_tokens, spans)
+        case LabelingSchema.BILOU:
+            return spans_to_bilou(num_tokens, spans)
+        case LabelingSchema.IOBES:
+            return spans_to_iobes(num_tokens, spans)
+        case _:
+            assert_never(schema)
 
 
 
