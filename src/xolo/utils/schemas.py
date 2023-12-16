@@ -222,7 +222,7 @@ def new_model(
         field_definitions[safe_name] = (annotation, Field(default, **field_args))
 
     return create_model(
-        prepare_symbol(model_name, case_style='pascal'),
+        prepare_symbol(model_name, style='pascal'),
         __doc__=model_description,
         **field_definitions,
     )
