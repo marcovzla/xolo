@@ -1,7 +1,9 @@
 from typing import Optional, assert_never
 from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import StrEnum
 import regex
+from xolo.utils.spans import Span
 
 
 
@@ -111,7 +113,12 @@ class TaggingSchema(StrEnum):
     IOB2 = 'iob2'
     BILOU = 'bilou'
     IOBES = 'iobes'
-    UNTAGGED = 'untagged'
+
+
+
+@dataclass(frozen=True, order=True)
+class TokenSpan(Span):
+    label: Optional[str] = None
 
 
 
@@ -119,31 +126,34 @@ def parse_token_label(label: str, sep: str = '-') -> tuple[Optional[str], Option
     """
     Parse a token label into its constituent parts (tag and entity) based on a given separator.
 
-    This function is designed to handle various token-based labeling schemes used in Named Entity Recognition (NER)
-    and similar tasks. It splits a given token label into two parts: the tag (like 'O', 'B', 'I', etc.) and the
-    entity type (like 'Person', 'Location', etc.), based on a specified separator.
+    This function handles various token-based labeling formats used in NER and similar tasks. It splits a given token
+    label into two parts: the tag (like 'O', 'B', 'I', etc.) and the entity type (like 'Person', 'Location', etc.),
+    based on the specified separator. If the label does not follow the expected format, it defaults to treating it as
+    an 'Inside' (I) tag with the entire label as the entity.
 
     Args:
-        label (str): The token label to be parsed. It can be a combination of a tag and an entity type, 
-                     separated by `sep`, or just a single tag or entity.
+        label (str): The token label to be parsed.
         sep (str, optional): The separator used to split the label into tag and entity. Defaults to '-'.
 
     Returns:
         tuple[Optional[str], Optional[str]]: A tuple where the first element is the tag and the second element 
-        is the entity type. If only a tag is present, the second element is `None`. If the label does not contain
-        a valid tag, the first element is `None` and the second element is the original label.
+        is the entity type. If the label does not contain a separator, the function defaults to ('I', label).
 
-    Examples:
-        - Calling `parse_token_label("B-Person")` returns `("B", "Person")`.
-        - Calling `parse_token_label("O")` returns `("O", None)`, as it's only a tag without an entity.
-        - Calling `parse_token_label("Person")` returns `(None, "Person")`, as it's only an entity without a tag.
+    Notes:
+        - If the label is empty, both the tag and entity are returned as None.
+        - If the label contains the separator, it's split into tag and entity.
+        - If the label does not contain the separator but is a valid token tag, it's assumed to be a tag with no entity.
+        - If the label is not a valid tag and does not contain the separator, it's treated as an entity with an 'I' tag.
     """
-    if sep in label:
+    if not label:
+        return None, None
+    elif sep in label:
         return tuple(label.split(sep=sep, maxsplit=1))
     elif label in VALID_TOKEN_TAGS:
         return label, None
     else:
-        return None, label
+        return 'I', label
+
 
 
 
@@ -181,8 +191,6 @@ def valid_label(label: str, schema: TaggingSchema) -> bool:
             return bilou_valid_label(label)
         case TaggingSchema.IOBES:
             return iobes_valid_label(label)
-        case TaggingSchema.UNTAGGED:
-            return is_untagged_label(label)
         case _:
             assert_never(schema)
 
@@ -222,35 +230,49 @@ def valid_transition(from_label: Optional[str], to_label: Optional[str], schema:
             return bilou_valid_transition(from_label, to_label)
         case TaggingSchema.IOBES:
             return iobes_valid_transition(from_label, to_label)
-        case TaggingSchema.UNTAGGED:
-            return untagged_valid_transition(from_label, to_label)
         case _:
             assert_never(schema)
 
 
 
-def untagged_valid_transition(from_label: Optional[str], to_label: Optional[str]) -> bool:
+def load_spans(labels: Sequence[str], scheme: TaggingSchema) -> list[TokenSpan]:
     """
-    Determine if a transition between two labels is valid in a context where the labels are 'untagged'.
+    Convert a sequence of labels into a list of TokenSpan objects according to a specified tagging schema.
 
-    This function evaluates the validity of transitioning from `from_label` to `to_label` when dealing with untagged labels.
-    Untagged labels are those that do not conform to structured tagging formats like IO, IOB, BILOU, etc. The function checks
-    for the presence of at least one valid label in the transition, which is essential in contexts where label structure is
-    not strictly defined or is unstructured.
+    This function delegates the conversion of labels to TokenSpans based on the provided tagging schema, such as IO, IOB1, IOB2, 
+    BILOU, or IOBES. Each tagging schema has specific rules and formats for representing entity spans in labeled sequences, 
+    commonly used in tasks like Named Entity Recognition (NER).
 
     Args:
-        from_label (Optional[str]): The label from which the transition starts. If `None`, it implies the absence of a starting label.
-        to_label (Optional[str]): The label to which the transition goes. If `None`, it implies the absence of an ending label.
+        labels (Sequence[str]): A sequence of labels to be converted into TokenSpans.
+        scheme (TaggingSchema): The tagging schema to use for the conversion.
 
     Returns:
-        bool: True if at least one of the labels (`from_label` or `to_label`) is not `None`, indicating a valid transition in an untagged context.
-              False is returned if both labels are `None`, signifying no valid transition between untagged labels.
+        list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type,
+                         as defined by the specified tagging schema.
+
+    Raises:
+        AssertionError: If an unsupported tagging schema is provided.
 
     Notes:
-        - This function is particularly useful in scenarios involving unstructured or raw data, where the detection of meaningful transitions
-          between data elements is required without relying on structured tagging formats.
+        - TokenSpan is assumed to be a named tuple or similar object with fields `start`, `end`, and `entity`.
+        - This function is capable of handling different tagging schemas, making it versatile for various NER and
+          related tasks.
+        - The `match` statement efficiently directs to the corresponding function for each tagging schema.
     """
-    return from_label is not None or to_label is not None
+    match scheme:
+        case TaggingSchema.IO:
+            return io_to_spans(labels)
+        case TaggingSchema.IOB1:
+            return iob1_to_spans(labels)
+        case TaggingSchema.IOB2:
+            return iob2_to_spans(labels)
+        case TaggingSchema.BILOU:
+            return bilou_to_spans(labels)
+        case TaggingSchema.IOBES:
+            return iobes_to_spans(labels)
+        case _:
+            assert_never(scheme)
 
 
 
@@ -457,29 +479,6 @@ def iobes_valid_transition(from_label: Optional[str], to_label: Optional[str]) -
 
 
 
-def is_untagged_label(label: str) -> bool:
-    """
-    Check if a given label is 'untagged' in the context of token annotation.
-
-    This function is designed to identify labels that do not follow any of the structured tagging formats typically used in
-    tasks like Named Entity Recognition (NER). It determines if a label is considered 'untagged' by checking if the label
-    does not have an associated tag component when parsed.
-
-    Args:
-        label (str): The label to be evaluated.
-
-    Returns:
-        bool: True if the label is 'untagged' (i.e., it lacks an associated tag); otherwise, False.
-
-    Notes:
-        - The function relies on the 'parse_token_label' method to separate the tag from the entity part of the label.
-          A label is deemed 'untagged' if the tag part is None after parsing.
-    """
-    tag, _ = parse_token_label(label)
-    return tag is None
-
-
-
 def io_valid_label(label: str) -> bool:
     """
     Check if a given label is valid within the IO (Inside-Outside) token annotation schema.
@@ -582,3 +581,288 @@ def iobes_valid_label(label: str) -> bool:
     """
     tag, _ = parse_token_label(label)
     return tag in 'IOBES'
+
+
+
+def io_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
+    """
+    Convert a list of IO (Inside-Outside) formatted labels into a list of TokenSpan objects.
+
+    This function processes a sequence of labels formatted according to the IO schema and groups contiguous 
+    tokens with the same entity type into TokenSpans. Each TokenSpan represents a span of tokens associated 
+    with a particular entity type.
+
+    Args:
+        labels (Sequence[str]): A sequence of labels formatted according to the IO schema.
+
+    Returns:
+        list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type.
+
+    Raises:
+        ValueError: If any label in the list is invalid according to the IO schema or if there is an invalid transition 
+                    between two consecutive labels.
+
+    Notes:
+        - A TokenSpan is defined here as a named tuple or similar object with fields `start`, `end`, and `entity`.
+          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the 
+          entity type associated with the span.
+        - This function is specific to the IO tagging schema and verifies both the validity of individual labels 
+          and the transitions between them.
+    """
+    spans = []
+    start = span_entity = previous_label = None
+    for i, label in enumerate(labels):
+        if not io_valid_label(label):
+            raise ValueError(f'Invalid label: {label}')
+        if not io_valid_transition(previous_label, label):
+            prev = 'START' if previous_label is None else previous_label
+            raise ValueError(f'Invalid transition from {prev!r} to {label!r}')
+
+        tag, entity = parse_token_label(label)
+        if tag == 'O':
+            if start is not None:
+                spans.append(TokenSpan(start, i, span_entity))
+                start = span_entity = None
+        elif tag == 'I':
+            if entity != span_entity:
+                if start is not None:
+                    spans.append(TokenSpan(start, i, span_entity))
+                start = i
+                span_entity = entity
+
+        previous_label = label
+
+    if start is not None:
+        spans.append(TokenSpan(start, len(labels), span_entity))
+
+    return spans
+
+
+
+def iob1_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
+    """
+    Convert a list of IOB1 (Inside-Outside-Beginning) formatted labels into a list of TokenSpan objects.
+
+    This function processes a sequence of labels formatted according to the IOB1 schema and groups contiguous 
+    tokens with the same entity type into TokenSpans. Each TokenSpan represents a span of tokens associated 
+    with a particular entity type.
+
+    Args:
+        labels (Sequence[str]): A sequence of labels formatted according to the IOB1 schema.
+
+    Returns:
+        list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type.
+
+    Raises:
+        ValueError: If any label in the list is invalid according to the IOB1 schema or if there is an invalid transition 
+                    between two consecutive labels.
+
+    Notes:
+        - A TokenSpan is defined here as a named tuple or similar object with fields `start`, `end`, and `entity`.
+          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the 
+          entity type associated with the span.
+        - This function is specific to the IOB1 tagging schema and verifies both the validity of individual labels 
+          and the transitions between them.
+    """
+    spans = []
+    start = span_entity = None
+    previous_label = None
+    for i, label in enumerate(labels):
+        if not iob1_valid_label(label):
+            raise ValueError(f'Invalid label: {label}')
+        if not iob1_valid_transition(previous_label, label):
+            prev = 'START' if previous_label is None else previous_label
+            raise ValueError(f'Invalid transition from {prev!r} to {label!r}')
+
+        tag, entity = parse_token_label(label)
+        if tag == 'O':
+            if start is not None:
+                spans.append(TokenSpan(start, i, span_entity))
+                start = span_entity = None
+        elif tag == 'B':
+            if start is not None:
+                spans.append(TokenSpan(start, i, span_entity))
+            start = i
+            span_entity = entity
+        elif tag == 'I':
+            if start is None:
+                start = i
+                span_entity = entity
+
+        previous_label = label
+
+    if start is not None:
+        spans.append(TokenSpan(start, len(labels), span_entity))
+
+    return spans
+
+
+
+def iob2_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
+    """
+    Convert a list of IOB2 (Inside-Outside-Beginning 2) formatted labels into a list of TokenSpan objects.
+
+    This function processes a sequence of labels formatted according to the IOB2 schema, a commonly used format in 
+    Named Entity Recognition (NER) tasks. It groups contiguous tokens with the same entity type into TokenSpans, 
+    where each TokenSpan represents a span of tokens associated with a particular entity type.
+
+    Args:
+        labels (Sequence[str]): A sequence of labels formatted according to the IOB2 schema.
+
+    Returns:
+        list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type.
+
+    Raises:
+        ValueError: If any label in the list is invalid according to the IOB2 schema or if there is an invalid transition 
+                    between two consecutive labels.
+
+    Notes:
+        - A TokenSpan is defined here as a named tuple or similar object with fields `start`, `end`, and `entity`.
+          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the 
+          entity type associated with the span.
+        - The IOB2 schema enhances the IOB1 format by enforcing that every new entity span must start with a 'B' tag, 
+          making it easier to delineate entities.
+    """
+    spans = []
+    start = span_entity = None
+    previous_label = None
+    for i, label in enumerate(labels):
+        if not iob2_valid_label(label):
+            raise ValueError(f'Invalid label: {label}')
+        if not iob2_valid_transition(previous_label, label):
+            prev = 'START' if previous_label is None else previous_label
+            raise ValueError(f'Invalid transition from {prev!r} to {label!r}')
+
+        tag, entity = parse_token_label(label)
+        if tag == 'O':
+            if start is not None:
+                spans.append(TokenSpan(start, i, span_entity))
+                start = span_entity = None
+        elif tag == 'B':
+            if start is not None:
+                spans.append(TokenSpan(start, i, span_entity))
+            start = i
+            span_entity = entity
+
+        previous_label = label
+
+    if start is not None:
+        spans.append(TokenSpan(start, len(labels), span_entity))
+
+    return spans
+
+
+
+def bilou_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
+    """
+    Convert a list of BILOU (Beginning-Inside-Last-Outside-Unit) formatted labels into a list of TokenSpan objects.
+
+    This function processes a sequence of labels formatted according to the BILOU schema, which is a detailed
+    tagging format used in Named Entity Recognition (NER) tasks. It groups tokens into TokenSpans, each representing
+    a contiguous sequence of tokens associated with a particular entity type. The BILOU format explicitly marks the
+    beginning, inside, last, and single-token (unit) entities, providing clear boundaries for each entity span.
+
+    Args:
+        labels (Sequence[str]): A sequence of labels formatted according to the BILOU schema.
+
+    Returns:
+        list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type.
+
+    Raises:
+        ValueError: If any label in the list is invalid according to the BILOU schema or if there is an invalid
+                    transition between two consecutive labels.
+
+    Notes:
+        - A TokenSpan is defined as a named tuple or similar object with fields `start`, `end`, and `entity`.
+          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the
+          entity type associated with the span.
+        - The function also validates the transitions between labels, including the transition from the last label
+          to the end of the sequence.
+    """
+    spans = []
+    start = span_entity = None
+    previous_label = None
+    for i, label in enumerate(labels):
+        if not bilou_valid_label(label):
+            raise ValueError(f'Invalid label: {label}')
+        if not bilou_valid_transition(previous_label, label):
+            prev = 'START' if previous_label is None else previous_label
+            raise ValueError(f'Invalid transition from {prev!r} to {label!r}')
+
+        tag, entity = parse_token_label(label)
+        if tag == 'B':
+            start = i
+            span_entity = entity
+        elif tag == 'L':
+            spans.append(TokenSpan(start, i + 1, span_entity))
+            start = span_entity = None
+        elif tag == 'U':
+            spans.append(TokenSpan(i, i + 1, entity))
+
+        previous_label = label
+
+    if start is not None:
+        spans.append(TokenSpan(start, len(labels), span_entity))
+
+    if not bilou_valid_transition(labels[-1], None):
+        raise ValueError(f'Invalid transition from {labels[-1]!r} to END')
+
+    return spans
+
+
+
+def iobes_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
+    """
+    Convert a list of IOBES (Inside-Outside-Beginning-End-Single) formatted labels into a list of TokenSpan objects.
+
+    This function processes a sequence of labels formatted according to the IOBES schema, which is used in Named Entity 
+    Recognition (NER) tasks. The IOBES format is more granular than IOB, identifying the beginning, inside, end, and 
+    single-token entities. This function groups tokens into TokenSpans, where each TokenSpan represents a contiguous 
+    sequence of tokens associated with a particular entity type.
+
+    Args:
+        labels (Sequence[str]): A sequence of labels formatted according to the IOBES schema.
+
+    Returns:
+        list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type.
+
+    Raises:
+        ValueError: If any label in the list is invalid according to the IOBES schema or if there is an invalid 
+                    transition between two consecutive labels.
+
+    Notes:
+        - A TokenSpan is defined as a named tuple or similar object with fields `start`, `end`, and `entity`.
+          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the
+          entity type associated with the span.
+        - The function also validates the transitions between labels, including the transition from the last label
+          to the end of the sequence.
+    """
+    spans = []
+    start = span_entity = None
+    previous_label = None
+    for i, label in enumerate(labels):
+        if not iobes_valid_label(label):
+            raise ValueError(f'Invalid label: {label}')
+        if not iobes_valid_transition(previous_label, label):
+            prev = 'START' if previous_label is None else previous_label
+            raise ValueError(f'Invalid transition from {prev!r} to {label!r}')
+
+        tag, entity = parse_token_label(label)
+        if tag == 'B':
+            start = i
+            span_entity = entity
+        elif tag == 'E':
+            spans.append(TokenSpan(start, i + 1, span_entity))
+            start = span_entity = None
+        elif tag == 'S':
+            spans.append(TokenSpan(i, i + 1, entity))
+
+        previous_label = label
+
+    if start is not None:
+        spans.append(TokenSpan(start, len(labels), span_entity))
+
+    if not iobes_valid_transition(labels[-1], None):
+        raise ValueError(f'Invalid transition from {labels[-1]!r} to END')
+
+    return spans
