@@ -1,6 +1,6 @@
 import os
 from typing import Any, Union, TypeVar
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from numbers import Number
 
 
@@ -33,6 +33,18 @@ to the callable protocol.
 """
 
 
+H = TypeVar('H', bound=Hashable)
+"""
+Type variable bound to the `Hashable` base class.
+
+This type variable `H` is intended for use in situations where a type parameter needs to 
+be restricted to types that are hashable. By bounding it to `Hashable`, `H` can be any 
+type that is a subclass of the `Hashable` class. This ensures that the type parameter 
+accepts only hashable types, providing type safety in contexts where hashability is required, 
+such as keys in dictionaries.
+"""
+
+
 N = TypeVar('N', bound=Number)
 """
 Type variable bound to the `Number` base class.
@@ -43,4 +55,3 @@ be restricted to types that represent numerical values. By bounding it to `Numbe
 or `complex`. This ensures that the type parameter accepts a wide range of numerical types, 
 providing both flexibility and type safety in numerical computations.
 """
-

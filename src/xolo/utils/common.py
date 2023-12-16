@@ -1,8 +1,6 @@
-from typing import TypeVar
-from collections.abc import Iterable, Hashable
+from collections.abc import Iterable
+from xolo.utils.typing import H
 
-
-H = TypeVar('H', bound=Hashable)
 
 
 def deduplicate_preserve_order(xs: Iterable[H]) -> list[H]:
