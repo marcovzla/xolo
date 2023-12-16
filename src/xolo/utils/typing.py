@@ -1,5 +1,5 @@
 import os
-from typing import Any, Union, TypeVar
+from typing import Any, TypeVar
 from collections.abc import Callable, Hashable
 from numbers import Number
 
@@ -12,7 +12,7 @@ KwArgs = dict[str, Any]
 """Defines a type for representing keyword arguments in a function call, as a dictionary with string keys and values of any type."""
 
 
-PathLike = Union[str, os.PathLike[str]]
+PathLike = str | os.PathLike[str]
 """
 Type alias for representing file system path information.
 

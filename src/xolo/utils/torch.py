@@ -1,6 +1,6 @@
 import os
 import random
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from collections.abc import Callable
 import torch
 from torch.utils.hooks import RemovableHandle
@@ -81,7 +81,7 @@ def enable_full_determinism(seed: int, warn_only: bool = False):
 
 
 # Type Aliases for clarity and reuse
-Grads = Union[tuple[torch.Tensor, ...], torch.Tensor]
+Grads = torch.Tensor | tuple[torch.Tensor, ...]
 TensorHookCallable = Callable[['TensorHook', torch.Tensor], Optional[torch.Tensor]]
 TensorPostAccumulateGradHookCallable = Callable[['TensorPostAccumulateGradHook', torch.Tensor], None]
 ModuleForwardHookCallable = Callable[['ModuleForwardHook', torch.nn.Module, Args, KwArgs, Any], Optional[Any]]
