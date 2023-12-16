@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Optional, assert_never
 from collections.abc import Sequence
+from enum import StrEnum
 import regex
 
 
@@ -104,6 +105,16 @@ VALID_TOKEN_TAGS = set('OBILUES')
 
 
 
+class TaggingSchema(StrEnum):
+    IO = 'io'
+    IOB1 = 'iob1'
+    IOB2 = 'iob2'
+    BILOU = 'bilou'
+    IOBES = 'iobes'
+    UNTAGGED = 'untagged'
+
+
+
 def parse_token_label(label: str, sep: str = '-') -> tuple[Optional[str], Optional[str]]:
     """
     Parse a token label into its constituent parts (tag and entity) based on a given separator.
@@ -133,6 +144,88 @@ def parse_token_label(label: str, sep: str = '-') -> tuple[Optional[str], Option
         return label, None
     else:
         return None, label
+
+
+
+def valid_label(label: str, schema: TaggingSchema) -> bool:
+    """
+    Determine if a given label is valid according to a specified tagging schema.
+
+    This function evaluates whether a label conforms to the rules of the tagging schema provided. Different tagging schemas
+    like IO, IOB1, IOB2, BILOU, IOBES, and UNTAGGED have specific formats and rules for labels. This function delegates the
+    validation to the corresponding schema-specific function based on the provided schema.
+
+    Args:
+        label (str): The label to be validated.
+        schema (TaggingSchema): The tagging schema to be used for validating the label.
+
+    Returns:
+        bool: True if the label is valid according to the specified tagging schema; otherwise, False.
+
+    Raises:
+        AssertionError: If an unsupported tagging schema is provided.
+
+    Notes:
+        - The function uses a `match` statement to delegate to the appropriate schema-specific validation function.
+          An `assert_never` is used to ensure all possible schema cases are covered.
+        - The UNTAGGED schema is included to handle cases where labels are untagged or do not follow a structured format.
+    """
+    match schema:
+        case TaggingSchema.IO:
+            return io_valid_label(label)
+        case TaggingSchema.IOB1:
+            return iob1_valid_label(label)
+        case TaggingSchema.IOB2:
+            return iob2_valid_label(label)
+        case TaggingSchema.BILOU:
+            return bilou_valid_label(label)
+        case TaggingSchema.IOBES:
+            return iobes_valid_label(label)
+        case TaggingSchema.UNTAGGED:
+            return is_untagged_label(label)
+        case _:
+            assert_never(schema)
+
+
+
+def valid_transition(from_label: Optional[str], to_label: Optional[str], schema: TaggingSchema) -> bool:
+    """
+    Determine if a transition between two labels is valid according to a specified tagging schema.
+
+    This function evaluates the validity of transitioning from `from_label` to `to_label` based on the tagging schema
+    provided. Different tagging schemas like IO, IOB1, IOB2, BILOU, IOBES, and UNTAGGED have specific rules for label transitions.
+    This function delegates the validation to the corresponding schema-specific function based on the provided schema.
+
+    Args:
+        from_label (Optional[str]): The label from which the transition starts. If `None`, it implies the beginning of a sequence.
+        to_label (Optional[str]): The label to which the transition goes. If `None`, it implies the end of a sequence.
+        schema (TaggingSchema): The tagging schema to be used for validating the transition.
+
+    Returns:
+        bool: True if the transition is valid according to the specified tagging schema; otherwise, False.
+
+    Raises:
+        AssertionError: If an unsupported tagging schema is provided.
+
+    Notes:
+        - The function uses a `match` statement to delegate to the appropriate schema-specific validation function.
+          An `assert_never` is used to ensure all possible schema cases are covered.
+    """
+    match schema:
+        case TaggingSchema.IO:
+            return io_valid_transition(from_label, to_label)
+        case TaggingSchema.IOB1:
+            return iob1_valid_transition(from_label, to_label)
+        case TaggingSchema.IOB2:
+            return iob2_valid_transition(from_label, to_label)
+        case TaggingSchema.BILOU:
+            return bilou_valid_transition(from_label, to_label)
+        case TaggingSchema.IOBES:
+            return iobes_valid_transition(from_label, to_label)
+        case TaggingSchema.UNTAGGED:
+            return untagged_valid_transition(from_label, to_label)
+        case _:
+            assert_never(schema)
 
 
 
