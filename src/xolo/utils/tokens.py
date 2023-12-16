@@ -136,6 +136,31 @@ def parse_token_label(label: str, sep: str = '-') -> tuple[Optional[str], Option
 
 
 
+def untagged_valid_transition(from_label: Optional[str], to_label: Optional[str]) -> bool:
+    """
+    Determine if a transition between two labels is valid in a context where the labels are 'untagged'.
+
+    This function evaluates the validity of transitioning from `from_label` to `to_label` when dealing with untagged labels.
+    Untagged labels are those that do not conform to structured tagging formats like IO, IOB, BILOU, etc. The function checks
+    for the presence of at least one valid label in the transition, which is essential in contexts where label structure is
+    not strictly defined or is unstructured.
+
+    Args:
+        from_label (Optional[str]): The label from which the transition starts. If `None`, it implies the absence of a starting label.
+        to_label (Optional[str]): The label to which the transition goes. If `None`, it implies the absence of an ending label.
+
+    Returns:
+        bool: True if at least one of the labels (`from_label` or `to_label`) is not `None`, indicating a valid transition in an untagged context.
+              False is returned if both labels are `None`, signifying no valid transition between untagged labels.
+
+    Notes:
+        - This function is particularly useful in scenarios involving unstructured or raw data, where the detection of meaningful transitions
+          between data elements is required without relying on structured tagging formats.
+    """
+    return from_label is not None or to_label is not None
+
+
+
 def io_valid_transition(from_label: Optional[str], to_label: Optional[str]) -> bool:
     """
     Determine if a transition between two labels is valid within the IO token annotation schema.
@@ -336,3 +361,131 @@ def iobes_valid_transition(from_label: Optional[str], to_label: Optional[str]) -
     if from_tag == 'S':
         return to_tag in 'BSO'
     return False
+
+
+
+def is_untagged_label(label: str) -> bool:
+    """
+    Check if a given label is 'untagged' in the context of token annotation.
+
+    This function is designed to identify labels that do not follow any of the structured tagging formats typically used in
+    tasks like Named Entity Recognition (NER). It determines if a label is considered 'untagged' by checking if the label
+    does not have an associated tag component when parsed.
+
+    Args:
+        label (str): The label to be evaluated.
+
+    Returns:
+        bool: True if the label is 'untagged' (i.e., it lacks an associated tag); otherwise, False.
+
+    Notes:
+        - The function relies on the 'parse_token_label' method to separate the tag from the entity part of the label.
+          A label is deemed 'untagged' if the tag part is None after parsing.
+    """
+    tag, _ = parse_token_label(label)
+    return tag is None
+
+
+
+def io_valid_label(label: str) -> bool:
+    """
+    Check if a given label is valid within the IO (Inside-Outside) token annotation schema.
+
+    This function evaluates whether a given label conforms to the rules of the IO schema, which is a simple
+    binary labeling system used in NER and similar tasks.
+
+    Args:
+        label (str): The label to be validated.
+
+    Returns:
+        bool: True if the label is valid within the IO schema; otherwise, False.
+
+    Notes:
+        - Valid IO tags are 'I' (Inside) and 'O' (Outside).
+    """
+    tag, _ = parse_token_label(label)
+    return tag in 'IO'
+
+
+
+def iob1_valid_label(label: str) -> bool:
+    """
+    Check if a given label is valid within the IOB1 (Inside-Outside-Beginning) token annotation schema.
+
+    This function evaluates whether a given label conforms to the rules of the IOB1 schema, commonly used
+    in NER and similar tasks for more detailed entity recognition.
+
+    Args:
+        label (str): The label to be validated.
+
+    Returns:
+        bool: True if the label is valid within the IOB1 schema; otherwise, False.
+
+    Notes:
+        - Valid IOB1 tags are 'I' (Inside), 'O' (Outside), and 'B' (Beginning).
+    """
+    tag, _ = parse_token_label(label)
+    return tag in 'IOB'
+
+
+
+def iob2_valid_label(label: str) -> bool:
+    """
+    Check if a given label is valid within the IOB2 (Inside-Outside-Beginning 2) token annotation schema.
+
+    This function evaluates whether a given label conforms to the rules of the IOB2 schema, an enhancement
+    of the IOB1 schema for NER and related tasks, offering clearer boundaries of entities.
+
+    Args:
+        label (str): The label to be validated.
+
+    Returns:
+        bool: True if the label is valid within the IOB2 schema; otherwise, False.
+
+    Notes:
+        - Valid IOB2 tags are 'I' (Inside), 'O' (Outside), and 'B' (Beginning).
+    """
+    tag, _ = parse_token_label(label)
+    return tag in 'IOB'
+
+
+
+def bilou_valid_label(label: str) -> bool:
+    """
+    Check if a given label is valid within the BILOU (Beginning-Inside-Last-Outside-Unit) token annotation schema.
+
+    This function evaluates whether a given label conforms to the rules of the BILOU schema, a detailed
+    labeling system used in NER and similar tasks for precise entity boundary and position identification.
+
+    Args:
+        label (str): The label to be validated.
+
+    Returns:
+        bool: True if the label is valid within the BILOU schema; otherwise, False.
+
+    Notes:
+        - Valid BILOU tags are 'B' (Beginning), 'I' (Inside), 'L' (Last), 'O' (Outside), and 'U' (Unit).
+    """
+    tag, _ = parse_token_label(label)
+    return tag in 'BILOU'
+
+
+
+def iobes_valid_label(label: str) -> bool:
+    """
+    Check if a given label is valid within the IOBES (Inside-Outside-Beginning-End-Single) token annotation schema.
+
+    This function evaluates whether a given label conforms to the rules of the IOBES schema, an advanced
+    labeling system used in NER and similar tasks for detailed entity boundary and position identification.
+
+    Args:
+        label (str): The label to be validated.
+
+    Returns:
+        bool: True if the label is valid within the IOBES schema; otherwise, False.
+
+    Notes:
+        - Valid IOBES tags are 'I' (Inside), 'O' (Outside), 'B' (Beginning), 'E' (End), and 'S' (Single).
+    """
+    tag, _ = parse_token_label(label)
+    return tag in 'IOBES'
