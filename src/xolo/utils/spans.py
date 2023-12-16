@@ -122,3 +122,12 @@ class Span:
             int: The length of the span, computed as the difference between the stop and start values.
         """
         return self.stop - self.start
+
+    def is_empty(self) -> bool:
+        """
+        Determines if the span is empty.
+
+        Returns:
+            bool: True if the span is empty (start and stop are the same), False otherwise.
+        """
+        return self.start == self.stop
