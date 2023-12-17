@@ -1116,17 +1116,17 @@ def spans_to_bilou(num_tokens: int, spans: Sequence[TokenSpan]) -> list[str]:
 
 
 
-def spans_to_iobes(num_tokens: int, spans: list[TokenSpan]) -> list[str]:
+def spans_to_iobes(num_tokens: int, spans: Sequence[TokenSpan]) -> list[str]:
     """
-    Convert a list of TokenSpan objects into a list of IOBES (Inside-Outside-Beginning-End-Single) formatted labels.
+    Convert a sequence of TokenSpan objects into a list of IOBES (Inside-Outside-Beginning-End-Single) formatted labels.
 
-    This function takes a list of TokenSpan objects and generates a corresponding list of labels in the IOBES format.
+    This function takes a sequence of TokenSpan objects and generates a corresponding list of labels in the IOBES format.
     The IOBES format provides a detailed classification of tokens in entity spans: 'B-' for Beginning, 'I-' for Inside,
     'E-' for End, 'S-' for Single-token entities, and 'O' for tokens Outside any entity span.
 
     Args:
         num_tokens (int): The number of tokens in the sequence for which labels are to be generated.
-        spans (list[TokenSpan]): A list of TokenSpan objects representing the spans of entities.
+        spans (Sequence[TokenSpan]): A sequence of TokenSpan objects representing the spans of entities.
 
     Returns:
         list[str]: A list of labels in the IOBES format, where each label corresponds to a token in the sequence.
