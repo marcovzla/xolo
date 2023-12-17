@@ -163,6 +163,30 @@ def unravel_index(
 
 
 
+def make_first_subword_mask(word_ids: Sequence[Optional[int]]) -> torch.BoolTensor:
+    """
+    Creates a boolean tensor indicating the positions of the first subword token
+    for each word in a sequence, based on the provided list of word IDs.
+
+    Args:
+        word_ids (Sequence[Optional[int]]): A sequence of word IDs, where each word ID corresponds
+            to a subword token. The word ID is None for special tokens.
+
+    Returns:
+        torch.BoolTensor: A boolean tensor where `True` indicates the first subword token of each word.
+
+    Example:
+        >>> word_ids = [None, 0, 1, 1, 2, None]
+        >>> create_initial_subword_mask(word_ids)
+        tensor([False,  True,  True, False,  True, False])
+    """
+    return torch.tensor([
+        word_id is not None and (i == 0 or word_id != word_ids[i-1])
+        for i, word_id in enumerate(word_ids)
+    ])
+
+
+
 ###############
 # PyTorch Hooks
 ###############
