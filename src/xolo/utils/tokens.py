@@ -507,7 +507,7 @@ def bilou_valid_transition(from_label: Optional[str], to_label: Optional[str]) -
     if from_label is None:
         return to_label is not None and to_label[0] in 'BUO'
     if to_label is None:
-        return from_tag in 'LUO'
+        return from_label[0] in 'LUO'
 
     from_tag, from_entity = parse_token_label(from_label)
     to_tag, to_entity = parse_token_label(to_label)
@@ -553,7 +553,7 @@ def iobes_valid_transition(from_label: Optional[str], to_label: Optional[str]) -
     if from_label is None:
         return to_label is not None and to_label[0] in 'BSO'
     if to_label is None:
-        return from_tag in 'EUO'
+        return from_label[0] in 'EUO'
 
     from_tag, from_entity = parse_token_label(from_label)
     to_tag, to_entity = parse_token_label(to_label)
