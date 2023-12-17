@@ -10,7 +10,13 @@ from xolo.utils.symbols import prepare_symbol
 from xolo.utils.common import is_dataclass
 
 
-def new_schema(*args: type[Any], array: bool = False) -> dict[str, Any]:
+def new_schema(
+        *types: type[Any],
+        array: bool = False,
+        replace_refs: bool = True,
+        keep_titles: bool = False,
+        flatten: bool = True,
+) -> dict[str, Any]:
     """
     Creates a new schema based on the provided type arguments. This function can generate
     a schema for a single type, a union of multiple types, or an array of these types.
@@ -22,10 +28,14 @@ def new_schema(*args: type[Any], array: bool = False) -> dict[str, Any]:
     4. Employs the 'prepare_schema' function to simplify and prepare the final schema.
 
     Args:
-        *args (type[Any]): Variable length argument list where each argument is a type. 
+        *types (type[Any]): Variable length argument list where each argument is a type. 
         These types are used to define the elements in the schema.
         array (bool, optional): If set to True, the schema will represent an array of the specified type(s). 
-        Defaults to False.
+            Defaults to False.
+        replace_refs (bool, optional): If True, resolves JSON references in the schema. Defaults to True.
+        keep_titles (bool, optional): If True, retains 'title' entries in the schema. Defaults to False.
+        flatten (bool, optional): If True, flattens 'allOf' entries in the schema if they contain a single clause. 
+            Defaults to True.
 
     Returns:
         dict[str, Any]: A dictionary representing the prepared schema. If 'array' is True, this 
@@ -44,16 +54,38 @@ def new_schema(*args: type[Any], array: bool = False) -> dict[str, Any]:
         - new_schema(int, str, array=True) returns a schema for an array of elements that can be 
           either integers or strings.
     """
-    if not args:
+    if not types:
         raise ValueError('At least one type argument is required to create a schema.')
-    t = args[0] if len(args) == 1 else Union[*args]  # type: ignore
+    # convert dataclasses to BaseModel
+    types = [
+        new_model_from_dataclass(t) if is_dataclass(t) else t
+        for t in types
+    ]
+    # merge types
+    single_type = types[0] if len(types) == 1 else Union[*types]  # type: ignore
+    # maybe wrap single_type in a list
     if array:
-        t = list[t]
-    type_adapter = TypeAdapter(t)
-    return prepare_schema(type_adapter)
+        single_type = list[single_type]
+    # maybe wrap single_type with a TypeAdapter
+    if not isinstance(single_type, type) or not issubclass(single_type, BaseModel):
+        single_type = TypeAdapter(single_type)
+    # return schema
+    return prepare_schema(
+        single_type,
+        replace_refs=replace_refs,
+        keep_titles=keep_titles,
+        flatten=flatten,
+    )
 
 
-def schema_from_callable(f: Callable, name: Optional[str] = None) -> dict[str, Any]:
+def schema_from_callable(
+        f: Callable,
+        name: Optional[str] = None,
+        *,
+        replace_refs: bool = True,
+        keep_titles: bool = False,
+        flatten: bool = True,
+) -> dict[str, Any]:
     """
     Generates a JSON schema from a callable (function or method).
 
@@ -63,14 +95,25 @@ def schema_from_callable(f: Callable, name: Optional[str] = None) -> dict[str, A
     Args:
         f (Callable): The callable (function or method) to generate the schema from.
         name (Optional[str]): An optional name for the generated schema. Defaults to the callable's name.
+        replace_refs (bool, optional): If True, resolves JSON references in the schema. Defaults to True.
+        keep_titles (bool, optional): If True, retains 'title' entries in the schema. Defaults to False.
+        flatten (bool, optional): If True, flattens 'allOf' entries in the schema if they contain a single clause. 
+            Defaults to True.
 
     Returns:
         dict[str, Any]: The generated JSON schema as a dictionary.
     """
     model = new_model_from_callable(f, name)
-    schema = dict(name=model.__name__)
 
-    parameters = prepare_schema(model)
+    parameters = prepare_schema(
+        model,
+        replace_refs=replace_refs,
+        keep_titles=keep_titles,
+        flatten=flatten,
+    )
+
+    # assemble schema
+    schema = dict(name=model.__name__)
     if 'description' in parameters:
         schema['description'] = parameters.pop('description')
     schema['parameters'] = parameters
@@ -245,7 +288,13 @@ def new_model_from_callable(f: Callable, name: Optional[str] = None) -> type[Bas
 
     Returns:
         type[BaseModel]: The dynamically created Pydantic model class.
+
+    Raises:
+        ValueError: If 'f' is not a Callable.
     """
+    if not callable(f):
+        raise ValueError('The provided object is not a Callable')
+
     if name is None:
         name = f.__name__
 
@@ -265,7 +314,7 @@ def new_model_from_callable(f: Callable, name: Optional[str] = None) -> type[Bas
     return new_model(name, fields, model_description=description)
 
 
-def new_model_from_dataclass(c: type[Any]) -> type[BaseModel]:
+def new_model_from_dataclass(c: type[Any], name: Optional[str] = None) -> type[BaseModel]:
     """
     Creates a Pydantic model from a given dataclass.
 
@@ -284,24 +333,24 @@ def new_model_from_dataclass(c: type[Any]) -> type[BaseModel]:
 
     Raises:
         ValueError: If 'c' is not a dataclass.
-
     """
     if not is_dataclass(c):
-        raise ValueError('The provided class is not a dataclass.')
+        raise ValueError('The provided class is not a dataclass')
 
-    model_name = c.__name__
+    if name is None:
+        name = c.__name__
+
     doc = docstring_parser.parse(inspect.getdoc(c))
     description = doc.short_description or doc.long_description
-    field_descriptions = {p.arg_name: p.description for p in doc.params}
+    param_descriptions = {p.arg_name: p.description for p in doc.params}
 
-    field_definitions = {}
-    for name, field in c.__dataclass_fields__.items():
-        annotation = new_model_from_dataclass(field.type) if is_dataclass(field.type) else field.type
-        default = field.default if field.default != dataclasses.MISSING else Ellipsis
-        field_definitions[name] = (annotation, Field(default, description=field_descriptions.get(name)))
+    fields = {
+        f.name: {
+            'annotation': new_model_from_dataclass(f.type) if is_dataclass(f.type) else f.type,
+            'default': f.default if f.default != dataclasses.MISSING else Ellipsis,
+            'description': param_descriptions.get(f.name),
+        }
+        for f in c.__dataclass_fields__.values()
+    }
 
-    return create_model(
-        model_name,
-        __doc__=description,
-        **field_definitions,
-    )
+    return new_model(name, fields, model_description=description)
