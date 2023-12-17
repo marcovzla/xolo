@@ -44,9 +44,11 @@ def new_schema(*args: type[Any], array: bool = False) -> dict[str, Any]:
         - new_schema(int, str, array=True) returns a schema for an array of elements that can be 
           either integers or strings.
     """
-    if not args: raise ValueError('At least one type argument is required to create a schema.')
+    if not args:
+        raise ValueError('At least one type argument is required to create a schema.')
     t = args[0] if len(args) == 1 else Union[*args]  # type: ignore
-    if array: t = list[t]
+    if array:
+        t = list[t]
     type_adapter = TypeAdapter(t)
     return prepare_schema(type_adapter)
 
