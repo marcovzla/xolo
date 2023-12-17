@@ -1,7 +1,8 @@
 import os
+import math
 import random
 import dataclasses
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Literal
 from collections.abc import Callable, Sequence, Mapping
 import torch
 from torch.utils.hooks import RemovableHandle
@@ -116,6 +117,49 @@ def move_to_device(obj: T, device: Device) -> T:
         return obj.__class__((k, move_to_device(v, device)) for k, v in obj.items())
     else:
         return obj
+
+
+
+def unravel_index(
+        index: int | torch.Tensor,
+        shape: tuple[int, ...],
+        order: Literal['C', 'F'] = 'C',
+) -> tuple[torch.Tensor, ...]:
+    """
+    Unravels a flat index into coordinate indices for an array of the given shape.
+
+    Args:
+        index (Union[int, torch.Tensor]): The flat index or tensor of indices to unravel.
+        shape (Tuple[int, ...]): The shape of the array for which the indices are to be unraveled.
+        order (Literal['C', 'F']): The order of the array, 'C' for row-major (C-style) or
+                                   'F' for column-major (Fortran-style) order.
+
+    Returns:
+        Tuple[torch.Tensor, ...]: A tuple of tensors representing the coordinates of the unraveled index.
+
+    Raises:
+        ValueError: If the index is out of bounds for the array with the given shape.
+    """
+    if isinstance(index, int):
+        index = torch.tensor(index)
+
+    # Validate index
+    size = math.prod(shape)
+    if not torch.all((0 <= index) & (index < size)):
+        oob_index = index[(index < 0) | (index >= size)][0]
+        raise ValueError(f'Index {oob_index.item()} is out of bounds for array with size {size}')
+
+    # Unravel coordinates
+    coords = []
+    if order == 'C':
+        shape = reversed(shape)
+    for dim in shape:
+        coords.append(index % dim)
+        index //= dim
+    if order == 'C':
+        coords = reversed(coords)
+
+    return tuple(coords)
 
 
 
