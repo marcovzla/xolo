@@ -7,9 +7,9 @@ from collections.abc import Callable, Sequence, Mapping
 import torch
 from torch.utils.hooks import RemovableHandle
 import numpy as np
-from xolo.utils.hooks import Hook, HookNotRegisteredException, HookAlreadyRegisteredException
-from xolo.utils.typing import Args, KwArgs
-from xolo.utils.common import is_dataclass_instance, is_namedtuple_instance
+from xolo.typing import Args, KwArgs
+from xolo.utils import is_dataclass_instance, is_namedtuple_instance
+from xolo.hooks import Hook, HookNotRegisteredException, HookAlreadyRegisteredException
 
 
 

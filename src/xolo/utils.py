@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Iterable
-from xolo.utils.typing import H
+from xolo.typing import H
 
 
 

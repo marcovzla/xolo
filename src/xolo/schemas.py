@@ -6,8 +6,8 @@ from pydantic import BaseModel, TypeAdapter, create_model
 from pydantic.fields import Field
 import docstring_parser
 import jsonref
-from xolo.utils.symbols import prepare_symbol
-from xolo.utils.common import is_dataclass_type
+from xolo.symbols import prepare_symbol
+from xolo.utils import is_dataclass_type
 
 
 def new_schema(

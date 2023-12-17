@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 import regex
-from xolo.utils.spans import Span
+from xolo.spans import Span
 
 
 
