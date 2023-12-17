@@ -1,12 +1,20 @@
 import os
 import random
-from typing import Any, Optional
-from collections.abc import Callable
+import dataclasses
+from typing import Any, Optional, TypeVar
+from collections.abc import Callable, Sequence, Mapping
 import torch
 from torch.utils.hooks import RemovableHandle
 import numpy as np
 from xolo.utils.hooks import Hook, HookNotRegisteredException, HookAlreadyRegisteredException
 from xolo.utils.typing import Args, KwArgs
+from xolo.utils.common import is_dataclass_instance, is_namedtuple_instance
+
+
+
+# Type Aliases
+T = TypeVar('T')
+Device = str | int | torch.device
 
 
 
@@ -74,13 +82,50 @@ def enable_full_determinism(seed: int, warn_only: bool = False):
 
 
 
+def move_to_device(obj: T, device: Device) -> T:
+    """
+    Recursively moves an object to the specified PyTorch device.
+
+    This function is designed to transfer various data structures and models to a 
+    PyTorch device (like GPU or CPU). It handles PyTorch tensors, modules (like neural network models), 
+    dataclasses, namedtuples, and general sequences and mappings. For composite structures like 
+    sequences and mappings, the operation is applied recursively. The function preserves the type 
+    of the input object, ensuring that the output has the same type as the input. If the object 
+    type is not directly handled, it's returned unchanged.
+
+    Args:
+        obj (T): The object to be moved. This can be a PyTorch tensor, module (nn.Module), dataclass, 
+                 namedtuple, any sequence (like lists and tuples), or mapping (like dictionaries).
+        device (Device): The target PyTorch device (e.g., 'cpu', 'cuda:0').
+
+    Returns:
+        T: The object moved to the specified device, if applicable. If the object type is not 
+           directly handled by the function, the original object is returned unchanged.
+    """
+    if isinstance(obj, torch.Tensor):
+        return obj.to(device)
+    elif isinstance(obj, torch.nn.Module):
+        return obj.to(device)
+    elif is_dataclass_instance(obj):
+        return obj.__class__(*(move_to_device(x, device) for x in dataclasses.astuple(obj)))
+    elif is_namedtuple_instance(obj):
+        return obj.__class__(*(move_to_device(x, device) for x in obj))
+    elif isinstance(obj, Sequence):
+        return obj.__class__(move_to_device(x, device) for x in obj)
+    elif isinstance(obj, Mapping):
+        return obj.__class__((k, move_to_device(v, device)) for k, v in obj.items())
+    else:
+        return obj
+
+
+
 ###############
 # PyTorch Hooks
 ###############
 
 
 
-# Type Aliases for clarity and reuse
+# Type Aliases
 Grads = torch.Tensor | tuple[torch.Tensor, ...]
 TensorHookCallable = Callable[['TensorHook', torch.Tensor], Optional[torch.Tensor]]
 TensorPostAccumulateGradHookCallable = Callable[['TensorPostAccumulateGradHook', torch.Tensor], None]
