@@ -1,4 +1,5 @@
 import inspect
+import dataclasses
 from typing import Any, Optional, Union
 from collections.abc import Callable
 from pydantic import BaseModel, TypeAdapter, create_model
@@ -6,6 +7,7 @@ from pydantic.fields import Field
 import docstring_parser
 import jsonref
 from xolo.utils.symbols import prepare_symbol
+from xolo.utils.common import is_dataclass
 
 
 def new_schema(*args: type[Any], array: bool = False) -> dict[str, Any]:
@@ -250,12 +252,54 @@ def new_model_from_callable(f: Callable, name: Optional[str] = None) -> type[Bas
     param_descriptions = {p.arg_name: p.description for p in doc.params}
 
     fields = {
-        p.name: dict(
-            annotation=p.annotation,
-            default=p.default if p.default != inspect.Parameter.empty else Ellipsis,
-            description=param_descriptions.get(p.name),
-        )
+        p.name: {
+            'annotation': p.annotation,
+            'default': p.default if p.default != inspect.Parameter.empty else Ellipsis,
+            'description': param_descriptions.get(p.name),
+        }
         for p in inspect.signature(f).parameters.values()
     }
 
     return new_model(name, fields, model_description=description)
+
+
+def new_model_from_dataclass(c: type[Any]) -> type[BaseModel]:
+    """
+    Creates a Pydantic model from a given dataclass.
+
+    This function converts a dataclass into a Pydantic model, preserving the 
+    field definitions, annotations, and defaults. It checks if the provided class 'c' 
+    is a dataclass and raises a ValueError if it is not. The function also supports 
+    nested dataclasses, converting them into nested Pydantic models.
+
+    Args:
+        c (type[Any]): The dataclass from which the Pydantic model will be created. 
+                       It must be a valid dataclass.
+
+    Returns:
+        type[BaseModel]: A Pydantic model class dynamically created based on 
+                         the structure of the provided dataclass.
+
+    Raises:
+        ValueError: If 'c' is not a dataclass.
+
+    """
+    if not is_dataclass(c):
+        raise ValueError('The provided class is not a dataclass.')
+
+    model_name = c.__name__
+    doc = docstring_parser.parse(inspect.getdoc(c))
+    description = doc.short_description or doc.long_description
+    field_descriptions = {p.arg_name: p.description for p in doc.params}
+
+    field_definitions = {}
+    for name, field in c.__dataclass_fields__.items():
+        annotation = new_model_from_dataclass(field.type) if is_dataclass(field.type) else field.type
+        default = field.default if field.default != dataclasses.MISSING else Ellipsis
+        field_definitions[name] = (annotation, Field(default, description=field_descriptions.get(name)))
+
+    return create_model(
+        model_name,
+        __doc__=description,
+        **field_definitions,
+    )
