@@ -7,7 +7,7 @@ from pydantic.fields import Field
 import docstring_parser
 import jsonref
 from xolo.utils.symbols import prepare_symbol
-from xolo.utils.common import is_dataclass
+from xolo.utils.common import is_dataclass_type
 
 
 def new_schema(
@@ -56,19 +56,24 @@ def new_schema(
     """
     if not types:
         raise ValueError('At least one type argument is required to create a schema.')
+
     # convert dataclasses to BaseModel
     types = [
-        new_model_from_dataclass(t) if is_dataclass(t) else t
+        new_model_from_dataclass(t) if is_dataclass_type(t) else t
         for t in types
     ]
+
     # merge types
     single_type = types[0] if len(types) == 1 else Union[*types]  # type: ignore
+
     # maybe wrap single_type in a list
     if array:
         single_type = list[single_type]
+
     # maybe wrap single_type with a TypeAdapter
     if not isinstance(single_type, type) or not issubclass(single_type, BaseModel):
         single_type = TypeAdapter(single_type)
+
     # return schema
     return prepare_schema(
         single_type,
@@ -334,7 +339,7 @@ def new_model_from_dataclass(c: type[Any], name: Optional[str] = None) -> type[B
     Raises:
         ValueError: If 'c' is not a dataclass.
     """
-    if not is_dataclass(c):
+    if not is_dataclass_type(c):
         raise ValueError('The provided class is not a dataclass')
 
     if name is None:
@@ -346,7 +351,7 @@ def new_model_from_dataclass(c: type[Any], name: Optional[str] = None) -> type[B
 
     fields = {
         f.name: {
-            'annotation': new_model_from_dataclass(f.type) if is_dataclass(f.type) else f.type,
+            'annotation': new_model_from_dataclass(f.type) if is_dataclass_type(f.type) else f.type,
             'default': f.default if f.default != dataclasses.MISSING else Ellipsis,
             'description': param_descriptions.get(f.name),
         }
