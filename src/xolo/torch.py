@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from torch.utils.hooks import RemovableHandle
 
-from xolo.hooks import Hook, HookAlreadyRegisteredException, HookNotRegisteredException
+from xolo.hooks import Hook, HookAlreadyRegisteredError, HookNotRegisteredError
 from xolo.typing import Args, KwArgs
 from xolo.utils import is_dataclass_instance, is_namedtuple_instance
 
@@ -226,7 +226,7 @@ class TorchHook(Hook):
         """
         super().unregister_hook()
         if self._handle is None:
-            raise HookNotRegisteredException('Hook is not currently registered in PyTorch')
+            raise HookNotRegisteredError('Hook is not currently registered in PyTorch')
         self._handle.remove()
         self._handle = None
 
@@ -271,7 +271,7 @@ class TensorHook(TorchHook):
         """
         super().register_hook()
         if self._handle is not None:
-            raise HookAlreadyRegisteredException('Hook is already registered with the tensor')
+            raise HookAlreadyRegisteredError('Hook is already registered with the tensor')
         self.handle = self.tensor.register_hook(self.hook_function)
 
     def hook_function(self, tensor: torch.Tensor) -> Optional[torch.Tensor]:
@@ -339,7 +339,7 @@ class TensorPostAccumulateGradHook(TorchHook):
         """
         super().register_hook()
         if self._handle is not None:
-            raise HookAlreadyRegisteredException('Hook is already registered with the tensor')
+            raise HookAlreadyRegisteredError('Hook is already registered with the tensor')
         self.handle = self.tensor.register_post_accumulate_grad_hook(self.hook_function)
 
     def hook_function(self, tensor: torch.Tensor):
@@ -408,7 +408,7 @@ class ModuleForwardHook(TorchHook):
         """
         super().register_hook()
         if self._handle is not None:
-            raise HookAlreadyRegisteredException('Hook is already registered with the module')
+            raise HookAlreadyRegisteredError('Hook is already registered with the module')
         self.handle = self.module.register_forward_hook(
             hook=self.hook_function,
             prepend=self.prepend,
@@ -490,7 +490,7 @@ class ModulePreForwardHook(TorchHook):
         """
         super().register_hook()
         if self._handle is not None:
-            raise HookAlreadyRegisteredException('Hook is already registered with the module')
+            raise HookAlreadyRegisteredError('Hook is already registered with the module')
         self.handle = self.module.register_forward_pre_hook(
             hook=self.hook_function,
             prepend=self.prepend,
@@ -571,7 +571,7 @@ class ModuleBackwardHook(TorchHook):
         """
         super().register_hook()
         if self._handle is not None:
-            raise HookAlreadyRegisteredException('Hook is already registered with the module')
+            raise HookAlreadyRegisteredError('Hook is already registered with the module')
         self.handle = self.module.register_full_backward_hook(
             hook=self.hook_function,
             prepend=self.prepend,
@@ -651,7 +651,7 @@ class ModulePreBackwardHook(TorchHook):
         """
         super().register_hook()
         if self._handle is not None:
-            raise HookAlreadyRegisteredException('Hook is already registered with the module')
+            raise HookAlreadyRegisteredError('Hook is already registered with the module')
         self.handle = self.module.register_full_backward_pre_hook(
             hook=self.hook_function,
             prepend=self.prepend,

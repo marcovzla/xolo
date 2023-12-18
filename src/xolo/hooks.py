@@ -74,7 +74,7 @@ class Hook:
             HookAlreadyRegisteredException: If the hook is already registered.
         """
         if self.is_registered:
-            raise HookAlreadyRegisteredException
+            raise HookAlreadyRegisteredError
         self._registered = True
 
     def unregister_hook(self):
@@ -88,7 +88,7 @@ class Hook:
             HookNotRegisteredException: If the hook is not currently registered.
         """
         if not self.is_registered:
-            raise HookNotRegisteredException
+            raise HookNotRegisteredError
         self._registered = False
 
 
@@ -154,7 +154,7 @@ class HookManager(Hook, Generic[H]):
             HookAlreadyRegisteredException: If trying to set hooks while the manager is registered.
         """
         if self.is_registered:
-            raise HookAlreadyRegisteredException('Cannot swap hooks while manager is registered')
+            raise HookAlreadyRegisteredError('Cannot swap hooks while manager is registered')
         self._hooks = list(hooks) if hooks is not None else []
 
     def register_hook(self):
@@ -187,7 +187,7 @@ class HookManager(Hook, Generic[H]):
 
 
 
-class HookException(Exception):
+class HookError(Exception):
     """
     Base exception for all hook-related errors.
 
@@ -198,7 +198,7 @@ class HookException(Exception):
 
 
 
-class HookNotRegisteredException(HookException):
+class HookNotRegisteredError(HookError):
     """Exception raised when attempting to unregister a hook that is not registered."""
 
     def __init__(self, message='Hook is not currently registered'):
@@ -206,7 +206,7 @@ class HookNotRegisteredException(HookException):
 
 
 
-class HookAlreadyRegisteredException(HookException):
+class HookAlreadyRegisteredError(HookError):
     """Exception raised when attempting to register a hook that is already registered."""
 
     def __init__(self, message='Hook is already registered'):
