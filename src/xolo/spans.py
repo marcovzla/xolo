@@ -36,8 +36,10 @@ class Span:
         Validates that start and stop values are non-negative and start is less than or equal to stop.
 
         Args:
-            start_or_stop (int): The start value if stop is provided, otherwise the stop value with start assumed to be 0.
-            stop (Optional[int]): The stop value. If None, start is assumed to be 0 and start_or_stop is the stop value.
+            start_or_stop (int): The start value if stop is provided, otherwise the stop value with start
+                assumed to be 0.
+            stop (Optional[int]): The stop value. If None, start is assumed to be 0 and start_or_stop
+                is the stop value.
 
         Returns:
             tuple[int, int]: The validated start and stop values.
@@ -70,7 +72,8 @@ class Span:
         Generates an iterator of Span objects within a specified range.
 
         Args:
-            start_or_stop (int): Start of the range if stop is provided, otherwise end of the range with start assumed to be 0.
+            start_or_stop (int): Start of the range if stop is provided, otherwise end of the range with start
+                assumed to be 0.
             stop (Optional[int]): End of the range. If None, start is assumed to be 0 and start_or_stop is the end.
             include_empty (bool): If True, includes spans of length 0.
 
@@ -80,8 +83,9 @@ class Span:
         """
         start, stop = cls.validate(start_or_stop, stop)
         offset = 0 if include_empty else 1
-        # By returning a generator expression, immediate validation errors can be raised when generate() is called.
-        # This approach contrasts with yielding, which delays error detection until the first item of the iterator is accessed.
+        # By returning a generator expression, immediate validation errors can be raised
+        # when generate() is called. This approach contrasts with yielding, which delays
+        # error detection until the first item of the iterator is accessed.
         return (
             cls(i, j, **kwargs)
             for i in range(start, stop)
@@ -100,7 +104,8 @@ class Span:
         Counts the number of spans within a specified range.
 
         Args:
-            start_or_stop (int): Start of the range if stop is provided, otherwise end of the range with start assumed to be 0.
+            start_or_stop (int): Start of the range if stop is provided, otherwise end of the range with start
+                assumed to be 0.
             stop (Optional[int]): End of the range. If None, start is assumed to be 0 and start_or_stop is the end.
             include_empty (bool): If True, includes counts of spans of length 0.
 
