@@ -2,7 +2,6 @@ import re
 from typing import Optional
 
 
-
 def delimited_string(
         delimiters: str,
         close_delimiters: Optional[str] = None,
@@ -22,10 +21,9 @@ def delimited_string(
         Union[str, re.Pattern[str]]: The regex pattern, either as a string or compiled pattern.
 
     Raises:
-        ValueError: If delimiters are empty, lengths of delimiters and close_delimiters do not match, or if escape_chars length 
+        ValueError: If delimiters are empty, lengths of delimiters and close_delimiters do not match, or if escape_chars length
                     does not match delimiters and is not a single character.
     """
-    
     # Ensure we have at least one delimiter
     if not delimiters:
         raise ValueError('At least one delimiter is required.')
@@ -84,14 +82,14 @@ def integer(
     Args:
         base (int, optional): The numeral base for the integer, between 2 and 36. Default is 10.
         sep (str, optional): The character used to separate groups of digits. Default is None.
-        group (int or tuple[int, int], optional): The number of digits in each group, 
+        group (int or tuple[int, int], optional): The number of digits in each group,
             either as a fixed number or a range. This is ignored unless `sep` is provided. Default is 3.
-        places (int or tuple[int, int], optional): Specifies the total number of places/digits 
-            the integer should have, either as a fixed number or a range. This is ignored if `sep` 
+        places (int or tuple[int, int], optional): Specifies the total number of places/digits
+            the integer should have, either as a fixed number or a range. This is ignored if `sep`
             is provided. Default is None.
-        sign (str, optional): Regular expression pattern to match the sign of the integer. 
+        sign (str, optional): Regular expression pattern to match the sign of the integer.
             Default is '[-+]?', which matches optional minus or plus signs.
-        return_string (bool, optional): If True, returns the pattern as a string. Otherwise, 
+        return_string (bool, optional): If True, returns the pattern as a string. Otherwise,
             returns a compiled regex pattern. Default is False.
 
     Returns:
@@ -141,15 +139,15 @@ def floating_point(
     Args:
         base (int, optional): The numeral base for the number, between 2 and 36. Default is 10.
         radix (str, optional): The character or pattern representing the radix point. Default is '\\.'.
-        places (int or tuple[int, int], optional): Specifies the number of digits after the radix point. 
+        places (int or tuple[int, int], optional): Specifies the number of digits after the radix point.
                                                     Default is None, allowing any number of digits.
-        sep (str, optional): The character used to separate groups of digits before the radix point. 
+        sep (str, optional): The character used to separate groups of digits before the radix point.
                              Default is None, indicating no grouping.
-        group (int or tuple[int, int], optional): The number of digits in each group before the radix point. 
+        group (int or tuple[int, int], optional): The number of digits in each group before the radix point.
                                                   Relevant only if `sep` is provided. Default is 3.
-        expon (str or None, optional): The character or pattern for the exponential part. 
+        expon (str or None, optional): The character or pattern for the exponential part.
                                        Default is '[Ee]', matching 'E' or 'e'.
-        sign (str, optional): Pattern to match the sign of the number or its exponent. 
+        sign (str, optional): Pattern to match the sign of the number or its exponent.
                               Default is '[-+]?'
         return_string (bool, optional): If True, returns the pattern as a string; otherwise, returns a compiled regex pattern.
 
@@ -192,12 +190,12 @@ def make_quantifier(
     Generate a regex quantifier string based on provided values or a range.
 
     Args:
-        x (Optional[int | tuple[int, int]]): An integer or a tuple specifying a range for the quantifier. 
+        x (Optional[int | tuple[int, int]]): An integer or a tuple specifying a range for the quantifier.
                                              If None, the default quantifier is used.
         default (str): The default quantifier to use if x is None.
-        min_val (Optional[int]): The minimum value for the quantifier if x is an integer. 
+        min_val (Optional[int]): The minimum value for the quantifier if x is an integer.
                                  Defaults to the value of x or x[0] if x is a tuple.
-        max_val (Optional[int]): The maximum value for the quantifier if x is an integer. 
+        max_val (Optional[int]): The maximum value for the quantifier if x is an integer.
                                  Defaults to the value of x or x[1] if x is a tuple.
 
     Returns:

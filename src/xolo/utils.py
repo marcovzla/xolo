@@ -1,16 +1,16 @@
 import dataclasses
 from collections.abc import Iterable
-from xolo.typing import H
 
+from xolo.typing import H
 
 
 def is_dataclass_type(obj) -> bool:
     """
     Determines if the provided object is both a class type and a dataclass.
 
-    This function verifies whether the 'obj' is a class (i.e., a type object) and 
-    whether it is decorated with the dataclass decorator. This ensures that 'obj' 
-    is not just any class, but specifically a dataclass type, which is important 
+    This function verifies whether the 'obj' is a class (i.e., a type object) and
+    whether it is decorated with the dataclass decorator. This ensures that 'obj'
+    is not just any class, but specifically a dataclass type, which is important
     for cases where behavior or attributes specific to dataclasses are required.
 
     Args:
@@ -27,9 +27,9 @@ def is_dataclass_instance(obj) -> bool:
     """
     Determines if the given object is an instance of a dataclass.
 
-    This function checks if 'obj' is an instance of a class that is decorated as 
-    a dataclass. It differentiates between the class itself (the type object) and 
-    its instances. This is useful when needing to verify that 'obj' is an actual 
+    This function checks if 'obj' is an instance of a class that is decorated as
+    a dataclass. It differentiates between the class itself (the type object) and
+    its instances. This is useful when needing to verify that 'obj' is an actual
     instantiated object of a dataclass, rather than just the dataclass definition.
 
     Args:
@@ -48,7 +48,7 @@ def is_namedtuple_type(obj) -> bool:
 
     This function checks if 'obj' is a subclass of tuple and whether it has
     characteristics specific to namedtuple types, such as the '_fields', '_make',
-    and '_asdict' attributes. This distinguishes namedtuple types from other 
+    and '_asdict' attributes. This distinguishes namedtuple types from other
     tuple-like classes or instances.
 
     Args:
@@ -58,10 +58,10 @@ def is_namedtuple_type(obj) -> bool:
         bool: True if 'obj' is a namedtuple type, False otherwise.
     """
     return (
-        isinstance(obj, type) and 
-        issubclass(obj, tuple) and 
-        hasattr(obj, '_fields') and 
-        hasattr(obj, '_make') and 
+        isinstance(obj, type) and
+        issubclass(obj, tuple) and
+        hasattr(obj, '_fields') and
+        hasattr(obj, '_make') and
         hasattr(obj, '_asdict')
     )
 
@@ -71,10 +71,10 @@ def is_namedtuple_instance(obj) -> bool:
     """
     Determines whether the provided object is an instance of a namedtuple.
 
-    This function checks if 'obj' is an instance of 'tuple' and possesses the '_fields' attribute, 
-    which is indicative of namedtuples. Furthermore, it verifies that '_fields' is a tuple 
-    consisting solely of strings and that 'obj' includes the '_asdict' method, a characteristic 
-    feature of namedtuples. These checks ensure that the object is not just any tuple, but 
+    This function checks if 'obj' is an instance of 'tuple' and possesses the '_fields' attribute,
+    which is indicative of namedtuples. Furthermore, it verifies that '_fields' is a tuple
+    consisting solely of strings and that 'obj' includes the '_asdict' method, a characteristic
+    feature of namedtuples. These checks ensure that the object is not just any tuple, but
     specifically an instance of a namedtuple.
 
     Args:
@@ -84,11 +84,11 @@ def is_namedtuple_instance(obj) -> bool:
         bool: True if 'obj' is an instance of a namedtuple, False otherwise.
     """
     return (
-        isinstance(obj, tuple) and 
-        hasattr(obj, '_fields') and 
-        isinstance(obj._fields, tuple) and 
+        isinstance(obj, tuple) and
+        hasattr(obj, '_fields') and
+        isinstance(obj._fields, tuple) and
         all(isinstance(field, str) for field in obj._fields) and
-        hasattr(obj, '_asdict') and 
+        hasattr(obj, '_asdict') and
         callable(obj._asdict)
     )
 

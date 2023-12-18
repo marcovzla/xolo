@@ -1,9 +1,8 @@
-from typing import Self, Generic, TypeVar, overload
-from collections.abc import Iterator, Iterable, AsyncIterator, AsyncIterable
-from collections import deque
-from itertools import chain
 import asyncio
-
+from collections import deque
+from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator
+from itertools import chain
+from typing import Generic, Self, TypeVar, overload
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -115,8 +114,8 @@ def async_to_sync_iterator(items: AsyncIterable[A], loop: asyncio.AbstractEventL
     """
     Converts an asynchronous iterable into a synchronous iterator.
 
-    This function takes an asynchronous iterable (items) and an event loop (loop) as inputs, 
-    and yields elements from the asynchronous iterable in a synchronous manner. This is particularly 
+    This function takes an asynchronous iterable (items) and an event loop (loop) as inputs,
+    and yields elements from the asynchronous iterable in a synchronous manner. This is particularly
     useful when integrating asynchronous code with synchronous code.
 
     Args:
@@ -132,7 +131,7 @@ def async_to_sync_iterator(items: AsyncIterable[A], loop: asyncio.AbstractEventL
             print(item)
 
     Note:
-        This function blocks the current thread until the next item of the async iterable is ready. 
+        This function blocks the current thread until the next item of the async iterable is ready.
         Therefore, it should be used cautiously to avoid blocking the event loop for prolonged periods.
     """
     try:

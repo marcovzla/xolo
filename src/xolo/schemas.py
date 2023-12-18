@@ -1,11 +1,13 @@
-import inspect
 import dataclasses
-from typing import Any, Optional, Union
+import inspect
 from collections.abc import Callable
-from pydantic import BaseModel, TypeAdapter, create_model
-from pydantic.fields import Field
+from typing import Any, Optional, Union
+
 import docstring_parser
 import jsonref
+from pydantic import BaseModel, TypeAdapter, create_model
+from pydantic.fields import Field
+
 from xolo.symbols import prepare_symbol
 from xolo.utils import is_dataclass_type
 
@@ -28,19 +30,19 @@ def new_schema(
     4. Employs the 'prepare_schema' function to simplify and prepare the final schema.
 
     Args:
-        *types (type[Any]): Variable length argument list where each argument is a type. 
+        *types (type[Any]): Variable length argument list where each argument is a type.
         These types are used to define the elements in the schema.
-        array (bool, optional): If set to True, the schema will represent an array of the specified type(s). 
+        array (bool, optional): If set to True, the schema will represent an array of the specified type(s).
             Defaults to False.
         replace_refs (bool, optional): If True, resolves JSON references in the schema. Defaults to True.
         keep_titles (bool, optional): If True, retains 'title' entries in the schema. Defaults to False.
-        flatten (bool, optional): If True, flattens 'allOf' entries in the schema if they contain a single clause. 
+        flatten (bool, optional): If True, flattens 'allOf' entries in the schema if they contain a single clause.
             Defaults to True.
 
     Returns:
-        dict[str, Any]: A dictionary representing the prepared schema. If 'array' is True, this 
-        will be a schema for an array of the specified type(s). Otherwise, it will represent the 
-        specified type or a union of types. The schema is simplified and ready for use, with 
+        dict[str, Any]: A dictionary representing the prepared schema. If 'array' is True, this
+        will be a schema for an array of the specified type(s). Otherwise, it will represent the
+        specified type or a union of types. The schema is simplified and ready for use, with
         resolved JSON references and unnecessary entries removed.
 
     Raises:
@@ -51,7 +53,7 @@ def new_schema(
         - new_schema(int) returns a schema for integers.
         - new_schema(int, str) returns a schema for elements that can be either integers or strings.
         - new_schema(int, array=True) returns a schema for an array of integers.
-        - new_schema(int, str, array=True) returns a schema for an array of elements that can be 
+        - new_schema(int, str, array=True) returns a schema for an array of elements that can be
           either integers or strings.
     """
     if not types:
@@ -102,7 +104,7 @@ def schema_from_callable(
         name (Optional[str]): An optional name for the generated schema. Defaults to the callable's name.
         replace_refs (bool, optional): If True, resolves JSON references in the schema. Defaults to True.
         keep_titles (bool, optional): If True, retains 'title' entries in the schema. Defaults to False.
-        flatten (bool, optional): If True, flattens 'allOf' entries in the schema if they contain a single clause. 
+        flatten (bool, optional): If True, flattens 'allOf' entries in the schema if they contain a single clause.
             Defaults to True.
 
     Returns:
@@ -134,7 +136,7 @@ def prepare_schema(
         flatten: bool = True,
 ) -> dict[str, Any]:
     """
-    Prepares a given schema, which can be in the form of a dictionary, a Pydantic model, 
+    Prepares a given schema, which can be in the form of a dictionary, a Pydantic model,
     or a TypeAdapter object. The preparation process is customizable and involves the following steps:
 
     1. Converting the input into a schema dictionary, if it is a TypeAdapter or Pydantic model.
@@ -143,17 +145,17 @@ def prepare_schema(
     4. Optionally flattening 'allOf' entries in the schema, provided they contain a single clause.
 
     Args:
-        schema (dict[str, Any] | TypeAdapter | type[BaseModel]): The schema to prepare. This can be a dictionary 
-            representing a JSON schema, a Pydantic model class, or a TypeAdapter object. The function will handle 
+        schema (dict[str, Any] | TypeAdapter | type[BaseModel]): The schema to prepare. This can be a dictionary
+            representing a JSON schema, a Pydantic model class, or a TypeAdapter object. The function will handle
             these different types to produce a prepared schema dictionary.
         replace_refs (bool, optional): If True, resolves JSON references in the schema. Defaults to True.
         keep_titles (bool, optional): If True, retains 'title' entries in the schema. Defaults to False.
-        flatten (bool, optional): If True, flattens 'allOf' entries in the schema if they contain a single clause. 
+        flatten (bool, optional): If True, flattens 'allOf' entries in the schema if they contain a single clause.
             Defaults to True.
 
     Returns:
-        dict[str, Any]: A prepared version of the input schema. The resulting dictionary will have resolved 
-            JSON references (if 'replace_refs' is True), and unnecessary entries like 'title' (if 'keep_titles' is False) 
+        dict[str, Any]: A prepared version of the input schema. The resulting dictionary will have resolved
+            JSON references (if 'replace_refs' is True), and unnecessary entries like 'title' (if 'keep_titles' is False)
             will be removed or flattened for easier interpretation and use.
 
     Raises:
@@ -323,17 +325,17 @@ def new_model_from_dataclass(c: type[Any], name: Optional[str] = None) -> type[B
     """
     Creates a Pydantic model from a given dataclass.
 
-    This function converts a dataclass into a Pydantic model, preserving the 
-    field definitions, annotations, and defaults. It checks if the provided class 'c' 
-    is a dataclass and raises a ValueError if it is not. The function also supports 
+    This function converts a dataclass into a Pydantic model, preserving the
+    field definitions, annotations, and defaults. It checks if the provided class 'c'
+    is a dataclass and raises a ValueError if it is not. The function also supports
     nested dataclasses, converting them into nested Pydantic models.
 
     Args:
-        c (type[Any]): The dataclass from which the Pydantic model will be created. 
+        c (type[Any]): The dataclass from which the Pydantic model will be created.
                        It must be a valid dataclass.
 
     Returns:
-        type[BaseModel]: A Pydantic model class dynamically created based on 
+        type[BaseModel]: A Pydantic model class dynamically created based on
                          the structure of the provided dataclass.
 
     Raises:

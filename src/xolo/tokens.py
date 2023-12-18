@@ -1,10 +1,11 @@
-from typing import Optional, assert_never
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
-import regex
-from xolo.spans import Span
+from typing import Optional, assert_never
 
+import regex
+
+from xolo.spans import Span
 
 
 def merge_tokens(tokens: Sequence[str]) -> str:
@@ -111,22 +112,22 @@ class LabelingSchema(StrEnum):
     """
     An enumeration of different labeling schemas used in text annotation for NLP tasks.
 
-    This enumeration defines various commonly used schemas for labeling sequences of text, such as in Named Entity 
-    Recognition (NER), part-of-speech tagging, and other NLP tasks. Each schema has its own set of rules and formats 
+    This enumeration defines various commonly used schemas for labeling sequences of text, such as in Named Entity
+    Recognition (NER), part-of-speech tagging, and other NLP tasks. Each schema has its own set of rules and formats
     for representing labels associated with text tokens.
 
     Members:
         IO: The Inside-Outside schema, a basic labeling format where each token is labeled as 'Inside' an entity or 'Outside'.
-        IOB1: The Inside-Outside-Beginning (version 1) schema, where 'B-' tags mark the beginning of entities following 
+        IOB1: The Inside-Outside-Beginning (version 1) schema, where 'B-' tags mark the beginning of entities following
               another entity of the same or different type.
-        IOB2: An extension of IOB1, where 'B-' tags are used at the beginning of every entity, providing clearer 
+        IOB2: An extension of IOB1, where 'B-' tags are used at the beginning of every entity, providing clearer
               boundaries between entities.
-        BILOU: The Beginning-Inside-Last-Outside-Unit schema, offering more detailed annotation by marking the beginning, 
+        BILOU: The Beginning-Inside-Last-Outside-Unit schema, offering more detailed annotation by marking the beginning,
                inside, last, and unit (single-token) entities.
         IOBES: Similar to BILOU, but with 'End' instead of 'Last', marking the Inside-Outside-Beginning-End-Single tokens.
 
     Notes:
-        - Each labeling schema has specific use cases and is chosen based on the requirements of the NLP task and the 
+        - Each labeling schema has specific use cases and is chosen based on the requirements of the NLP task and the
           characteristics of the dataset.
     """
     IO = 'io'
@@ -140,7 +141,7 @@ class LabelingSchema(StrEnum):
 @dataclass(frozen=True, order=True)
 class TokenSpan(Span):
     """
-    A data class representing a span of tokens, typically used in Natural Language Processing (NLP) tasks like Named 
+    A data class representing a span of tokens, typically used in Natural Language Processing (NLP) tasks like Named
     Entity Recognition (NER).
 
     This class inherits from the `Span` class, which provides the basic structure for representing a span in a sequence
@@ -149,12 +150,12 @@ class TokenSpan(Span):
     Attributes:
         start (int): Inherited from `Span`. The starting index of the span in the token sequence.
         stop (int): Inherited from `Span`. The stopping index of the span in the token sequence.
-        label (Optional[str]): An optional label for the span, typically representing an entity type or similar 
+        label (Optional[str]): An optional label for the span, typically representing an entity type or similar
                                classification in NLP tasks.
 
     Notes:
         - The `start` and `stop` attributes are inherited from the `Span` class and represent the span's boundaries.
-        - The `label` attribute is used to assign a specific classification or entity type to the span, which is 
+        - The `label` attribute is used to assign a specific classification or entity type to the span, which is
           crucial in tasks like NER or text classification.
     """
     label: Optional[str] = None
@@ -179,9 +180,9 @@ def convert_labels(labels: Sequence[str], from_schema: LabelingSchema, to_schema
         list[str]: A list of labels formatted according to the 'to_schema'.
 
     Notes:
-        - This function is useful in scenarios where labeled data in one format needs to be transformed into another 
+        - This function is useful in scenarios where labeled data in one format needs to be transformed into another
           format, which is common in NER tasks where different systems or approaches require different labeling schemas.
-        - The function relies on `parse_labels` to interpret the original labels and `generate_labels` to produce 
+        - The function relies on `parse_labels` to interpret the original labels and `generate_labels` to produce
           the labels in the new schema.
     """
     return generate_labels(
@@ -206,7 +207,7 @@ def parse_token_label(label: str, sep: str = '-') -> tuple[Optional[str], Option
         sep (str, optional): The separator used to split the label into tag and entity. Defaults to '-'.
 
     Returns:
-        tuple[Optional[str], Optional[str]]: A tuple where the first element is the tag and the second element 
+        tuple[Optional[str], Optional[str]]: A tuple where the first element is the tag and the second element
         is the entity type. If the label does not contain a separator, the function defaults to ('I', label).
 
     Notes:
@@ -307,9 +308,9 @@ def parse_labels(labels: Sequence[str], schema: LabelingSchema) -> list[TokenSpa
     """
     Parse a sequence of labels into a list of TokenSpan objects according to a specified labeling schema.
 
-    This function takes a sequence of labels and converts them into a structured format, specifically into 
-    TokenSpan objects that represent spans of entities, based on the provided labeling schema. Supported 
-    schemas include IO, IOB1, IOB2, BILOU, and IOBES, each with its own specific rules for representing 
+    This function takes a sequence of labels and converts them into a structured format, specifically into
+    TokenSpan objects that represent spans of entities, based on the provided labeling schema. Supported
+    schemas include IO, IOB1, IOB2, BILOU, and IOBES, each with its own specific rules for representing
     entity spans in labeled sequences.
 
     Args:
@@ -340,8 +341,8 @@ def generate_labels(num_tokens: int, spans: Sequence[TokenSpan], schema: Labelin
     """
     Generate a sequence of labels from a sequence of TokenSpan objects according to a specified labeling schema.
 
-    This function converts structured data, specifically TokenSpan objects representing spans of entities, 
-    into a sequence of labels formatted according to the given labeling schema. Supported schemas include IO, 
+    This function converts structured data, specifically TokenSpan objects representing spans of entities,
+    into a sequence of labels formatted according to the given labeling schema. Supported schemas include IO,
     IOB1, IOB2, BILOU, and IOBES. Each schema has its specific formatting rules for labeling token sequences.
 
     Args:
@@ -350,7 +351,7 @@ def generate_labels(num_tokens: int, spans: Sequence[TokenSpan], schema: Labelin
         schema (LabelingSchema): The labeling schema to use for generating the labels.
 
     Returns:
-        list[str]: A list of labels formatted according to the specified labeling schema, where each label corresponds 
+        list[str]: A list of labels formatted according to the specified labeling schema, where each label corresponds
                    to a token in the sequence.
     """
     match schema:
@@ -377,16 +378,16 @@ def io_valid_transition(from_label: Optional[str], to_label: Optional[str]) -> b
     the validity of a transition from `from_label` to `to_label` in sequences annotated according to the IO schema.
 
     Args:
-        from_label (Optional[str]): The label from which the transition starts. If `None`, it is 
+        from_label (Optional[str]): The label from which the transition starts. If `None`, it is
             interpreted as the start of the sequence, meaning that `to_label` is the first label in the sequence.
             This is specific to the IO schema, where sequences start without a prior context.
-        to_label (Optional[str]): The label to which the transition goes. If `None`, it is interpreted 
+        to_label (Optional[str]): The label to which the transition goes. If `None`, it is interpreted
             as the end of the sequence, indicating that `from_label` is the last token in the sequence.
             In the IO schema, this signifies the end of the current annotation.
 
     Returns:
-        bool: True if the transition is valid within the IO schema, i.e., at least one of the labels 
-        (`from_label` or `to_label`) is not `None`. False is returned if both are `None`, as it implies a 
+        bool: True if the transition is valid within the IO schema, i.e., at least one of the labels
+        (`from_label` or `to_label`) is not `None`. False is returned if both are `None`, as it implies a
         transition from nowhere to nowhere, which is invalid in the IO context.
 
     Examples:
@@ -681,8 +682,8 @@ def io_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
     """
     Convert a list of IO (Inside-Outside) formatted labels into a list of TokenSpan objects.
 
-    This function processes a sequence of labels formatted according to the IO schema and groups contiguous 
-    tokens with the same entity type into TokenSpans. Each TokenSpan represents a span of tokens associated 
+    This function processes a sequence of labels formatted according to the IO schema and groups contiguous
+    tokens with the same entity type into TokenSpans. Each TokenSpan represents a span of tokens associated
     with a particular entity type.
 
     Args:
@@ -692,14 +693,14 @@ def io_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
         list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type.
 
     Raises:
-        ValueError: If any label in the list is invalid according to the IO schema or if there is an invalid transition 
+        ValueError: If any label in the list is invalid according to the IO schema or if there is an invalid transition
                     between two consecutive labels.
 
     Notes:
         - A TokenSpan is defined here as a named tuple or similar object with fields `start`, `end`, and `entity`.
-          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the 
+          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the
           entity type associated with the span.
-        - This function is specific to the IO tagging schema and verifies both the validity of individual labels 
+        - This function is specific to the IO tagging schema and verifies both the validity of individual labels
           and the transitions between them.
     """
     spans = []
@@ -736,8 +737,8 @@ def iob1_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
     """
     Convert a list of IOB1 (Inside-Outside-Beginning) formatted labels into a list of TokenSpan objects.
 
-    This function processes a sequence of labels formatted according to the IOB1 schema and groups contiguous 
-    tokens with the same entity type into TokenSpans. Each TokenSpan represents a span of tokens associated 
+    This function processes a sequence of labels formatted according to the IOB1 schema and groups contiguous
+    tokens with the same entity type into TokenSpans. Each TokenSpan represents a span of tokens associated
     with a particular entity type.
 
     Args:
@@ -747,14 +748,14 @@ def iob1_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
         list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type.
 
     Raises:
-        ValueError: If any label in the list is invalid according to the IOB1 schema or if there is an invalid transition 
+        ValueError: If any label in the list is invalid according to the IOB1 schema or if there is an invalid transition
                     between two consecutive labels.
 
     Notes:
         - A TokenSpan is defined here as a named tuple or similar object with fields `start`, `end`, and `entity`.
-          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the 
+          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the
           entity type associated with the span.
-        - This function is specific to the IOB1 tagging schema and verifies both the validity of individual labels 
+        - This function is specific to the IOB1 tagging schema and verifies both the validity of individual labels
           and the transitions between them.
     """
     spans = []
@@ -795,8 +796,8 @@ def iob2_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
     """
     Convert a list of IOB2 (Inside-Outside-Beginning 2) formatted labels into a list of TokenSpan objects.
 
-    This function processes a sequence of labels formatted according to the IOB2 schema, a commonly used format in 
-    Named Entity Recognition (NER) tasks. It groups contiguous tokens with the same entity type into TokenSpans, 
+    This function processes a sequence of labels formatted according to the IOB2 schema, a commonly used format in
+    Named Entity Recognition (NER) tasks. It groups contiguous tokens with the same entity type into TokenSpans,
     where each TokenSpan represents a span of tokens associated with a particular entity type.
 
     Args:
@@ -806,14 +807,14 @@ def iob2_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
         list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type.
 
     Raises:
-        ValueError: If any label in the list is invalid according to the IOB2 schema or if there is an invalid transition 
+        ValueError: If any label in the list is invalid according to the IOB2 schema or if there is an invalid transition
                     between two consecutive labels.
 
     Notes:
         - A TokenSpan is defined here as a named tuple or similar object with fields `start`, `end`, and `entity`.
-          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the 
+          `start` and `end` denote the start and end indices of the span in the list of labels, and `entity` is the
           entity type associated with the span.
-        - The IOB2 schema enhances the IOB1 format by enforcing that every new entity span must start with a 'B' tag, 
+        - The IOB2 schema enhances the IOB1 format by enforcing that every new entity span must start with a 'B' tag,
           making it easier to delineate entities.
     """
     spans = []
@@ -908,9 +909,9 @@ def iobes_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
     """
     Convert a list of IOBES (Inside-Outside-Beginning-End-Single) formatted labels into a list of TokenSpan objects.
 
-    This function processes a sequence of labels formatted according to the IOBES schema, which is used in Named Entity 
-    Recognition (NER) tasks. The IOBES format is more granular than IOB, identifying the beginning, inside, end, and 
-    single-token entities. This function groups tokens into TokenSpans, where each TokenSpan represents a contiguous 
+    This function processes a sequence of labels formatted according to the IOBES schema, which is used in Named Entity
+    Recognition (NER) tasks. The IOBES format is more granular than IOB, identifying the beginning, inside, end, and
+    single-token entities. This function groups tokens into TokenSpans, where each TokenSpan represents a contiguous
     sequence of tokens associated with a particular entity type.
 
     Args:
@@ -920,7 +921,7 @@ def iobes_to_spans(labels: Sequence[str]) -> list[TokenSpan]:
         list[TokenSpan]: A list of TokenSpan objects, each representing a span of tokens with a specific entity type.
 
     Raises:
-        ValueError: If any label in the list is invalid according to the IOBES schema or if there is an invalid 
+        ValueError: If any label in the list is invalid according to the IOBES schema or if there is an invalid
                     transition between two consecutive labels.
 
     Notes:
@@ -966,8 +967,8 @@ def spans_to_io(num_tokens: int, spans: Sequence[TokenSpan], prepend_tag: bool =
     """
     Convert a sequence of TokenSpan objects into a list of IO (Inside-Outside) formatted labels.
 
-    This function takes a sequence of TokenSpan objects and generates a corresponding list of labels in the IO format. 
-    Each TokenSpan object represents a span of tokens with a specific entity type. The function supports an option to 
+    This function takes a sequence of TokenSpan objects and generates a corresponding list of labels in the IO format.
+    Each TokenSpan object represents a span of tokens with a specific entity type. The function supports an option to
     prepend the 'I-' tag to labels inside spans.
 
     Args:
@@ -1005,7 +1006,7 @@ def spans_to_iob1(num_tokens: int, spans: Sequence[TokenSpan]) -> list[str]:
     Convert a list of TokenSpan objects into a list of IOB1 (Inside-Outside-Beginning) formatted labels.
 
     This function takes a list of TokenSpan objects and generates a corresponding list of labels in the IOB1 format.
-    In the IOB1 format, 'B-' is used to mark the beginning of a span only after another 'B-' or an 'I-' tag, but not 
+    In the IOB1 format, 'B-' is used to mark the beginning of a span only after another 'B-' or an 'I-' tag, but not
     directly after an 'O' tag. The 'I-' tag is used for tokens inside the span. Tokens outside any span are labeled as 'O'.
 
     Args:
@@ -1080,7 +1081,7 @@ def spans_to_bilou(num_tokens: int, spans: Sequence[TokenSpan]) -> list[str]:
     Convert a sequence of TokenSpan objects into a list of BILOU (Beginning-Inside-Last-Outside-Unit) formatted labels.
 
     This function takes a sequence of TokenSpan objects and generates a corresponding list of labels in the BILOU format.
-    The BILOU format provides a detailed classification of tokens in entity spans: 'B-' for Beginning, 'I-' for Inside, 
+    The BILOU format provides a detailed classification of tokens in entity spans: 'B-' for Beginning, 'I-' for Inside,
     'L-' for Last, 'U-' for Unit (single-token entities), and 'O' for tokens Outside any entity span.
 
     Args:

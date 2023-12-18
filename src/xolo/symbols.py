@@ -1,8 +1,8 @@
 import re
-from typing import Literal, assert_never
 from collections.abc import Iterable
-from slugify import slugify
+from typing import Literal, assert_never
 
+from slugify import slugify
 
 CaseStyle = Literal['snake', 'camel', 'pascal', 'kebab']
 
@@ -33,7 +33,7 @@ def prepare_symbol(
         **kwargs: Additional keyword arguments that are passed to the 'slugify' function.
 
     Returns:
-        str: The transformed symbol, which is a normalized version of the input text according to the specified 
+        str: The transformed symbol, which is a normalized version of the input text according to the specified
         parameters. The symbol is in the specified case style.
 
     Examples:
@@ -45,7 +45,7 @@ def prepare_symbol(
         - prepare_symbol("Привет мир!", allow_unicode=True, case_style='pascal') returns "ПриветМир".
 
     Note:
-        The behavior of this function can be further customized by additional keyword arguments that are specific 
+        The behavior of this function can be further customized by additional keyword arguments that are specific
         to the underlying 'slugify' function. The 'lowercase' option applies before the case style conversion.
     """
     if not text or not isinstance(text, str):

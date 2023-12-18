@@ -1,7 +1,5 @@
-from typing import Generic, TypeVar, Self, Optional
 from collections.abc import Iterable, Iterator
-
-
+from typing import Generic, Optional, Self, TypeVar
 
 H = TypeVar('H', bound='Hook')
 
@@ -163,7 +161,7 @@ class HookManager(Hook, Generic[H]):
         """
         Registers all managed hooks.
 
-        Before registering the individual hooks, this method registers the manager itself. 
+        Before registering the individual hooks, this method registers the manager itself.
         If any hook is already registered, a HookAlreadyRegisteredException is raised.
 
         Raises:

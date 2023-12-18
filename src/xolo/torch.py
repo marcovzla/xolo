@@ -1,17 +1,17 @@
-import os
-import math
-import random
 import dataclasses
-from typing import Any, Optional, TypeVar, Literal
-from collections.abc import Callable, Sequence, Mapping
+import math
+import os
+import random
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, Literal, Optional, TypeVar
+
+import numpy as np
 import torch
 from torch.utils.hooks import RemovableHandle
-import numpy as np
+
+from xolo.hooks import Hook, HookAlreadyRegisteredException, HookNotRegisteredException
 from xolo.typing import Args, KwArgs
 from xolo.utils import is_dataclass_instance, is_namedtuple_instance
-from xolo.hooks import Hook, HookNotRegisteredException, HookAlreadyRegisteredException
-
-
 
 # Type Aliases
 T = TypeVar('T')
@@ -87,20 +87,20 @@ def move_to_device(obj: T, device: Device) -> T:
     """
     Recursively moves an object to the specified PyTorch device.
 
-    This function is designed to transfer various data structures and models to a 
-    PyTorch device (like GPU or CPU). It handles PyTorch tensors, modules (like neural network models), 
-    dataclasses, namedtuples, and general sequences and mappings. For composite structures like 
-    sequences and mappings, the operation is applied recursively. The function preserves the type 
-    of the input object, ensuring that the output has the same type as the input. If the object 
+    This function is designed to transfer various data structures and models to a
+    PyTorch device (like GPU or CPU). It handles PyTorch tensors, modules (like neural network models),
+    dataclasses, namedtuples, and general sequences and mappings. For composite structures like
+    sequences and mappings, the operation is applied recursively. The function preserves the type
+    of the input object, ensuring that the output has the same type as the input. If the object
     type is not directly handled, it's returned unchanged.
 
     Args:
-        obj (T): The object to be moved. This can be a PyTorch tensor, module (nn.Module), dataclass, 
+        obj (T): The object to be moved. This can be a PyTorch tensor, module (nn.Module), dataclass,
                  namedtuple, any sequence (like lists and tuples), or mapping (like dictionaries).
         device (Device): The target PyTorch device (e.g., 'cpu', 'cuda:0').
 
     Returns:
-        T: The object moved to the specified device, if applicable. If the object type is not 
+        T: The object moved to the specified device, if applicable. If the object type is not
            directly handled by the function, the original object is returned unchanged.
     """
     if isinstance(obj, torch.Tensor):
@@ -145,7 +145,7 @@ def unravel_index(
 
     # Validate index
     size = math.prod(shape)
-    if not torch.all((0 <= index) & (index < size)):
+    if not torch.all((index >= 0) & (index < size)):
         oob_index = index[(index < 0) | (index >= size)][0]
         raise ValueError(f'Index {oob_index.item()} is out of bounds for array with size {size}')
 
@@ -207,7 +207,7 @@ class TorchHook(Hook):
     """
     A hook class for managing PyTorch hooks.
 
-    This class extends the functionality of the Hook class for use with PyTorch, 
+    This class extends the functionality of the Hook class for use with PyTorch,
     providing a way to manage hooks associated with PyTorch operations.
     """
 
@@ -236,8 +236,8 @@ class TensorHook(TorchHook):
     """
     A hook for PyTorch tensors.
 
-    This class is used to attach a hook to a PyTorch tensor. The hook function can be provided 
-    either directly as an argument or by overriding the `hook_function` method in a subclass. 
+    This class is used to attach a hook to a PyTorch tensor. The hook function can be provided
+    either directly as an argument or by overriding the `hook_function` method in a subclass.
     The hook will be executed whenever the tensor participates in a backward pass.
 
     Attributes:
@@ -255,7 +255,7 @@ class TensorHook(TorchHook):
 
         Args:
             tensor (torch.Tensor): The tensor to attach the hook to.
-            hook_function (Optional[TensorHookCallable]): An optional callable that is invoked when the hook triggers. 
+            hook_function (Optional[TensorHookCallable]): An optional callable that is invoked when the hook triggers.
                 If not provided, the `hook_function` method must be overridden.
         """
         super().__init__()
@@ -266,7 +266,7 @@ class TensorHook(TorchHook):
         """
         Registers the hook with the PyTorch tensor.
 
-        The hook function is attached to the tensor, and will be called whenever the tensor 
+        The hook function is attached to the tensor, and will be called whenever the tensor
         participates in a backward pass. If the hook function is not set, an error is raised.
         """
         super().register_hook()
@@ -279,7 +279,7 @@ class TensorHook(TorchHook):
         The function to be called when the hook triggers.
 
         This method should be overridden if a hook function is not provided during initialization.
-        The default implementation calls the provided hook function, if available, or raises 
+        The default implementation calls the provided hook function, if available, or raises
         NotImplementedError otherwise.
 
         Args:
@@ -302,7 +302,7 @@ class TensorPostAccumulateGradHook(TorchHook):
     A hook class for PyTorch tensors, specifically for post-accumulate gradient operations.
 
     This class is used to attach a hook that is triggered after gradients are accumulated in a tensor
-    during the backward pass. The hook function can be provided directly as an argument or by overriding 
+    during the backward pass. The hook function can be provided directly as an argument or by overriding
     the `hook_function` method in a subclass.
 
     Attributes:
@@ -331,7 +331,7 @@ class TensorPostAccumulateGradHook(TorchHook):
         """
         Registers the hook with the PyTorch tensor for post-accumulate gradient operations.
 
-        The hook function is attached to the tensor, and will be called after gradient accumulation 
+        The hook function is attached to the tensor, and will be called after gradient accumulation
         during the backward pass. If the hook is already registered, a HookAlreadyRegisteredException is raised.
 
         Raises:
@@ -346,8 +346,8 @@ class TensorPostAccumulateGradHook(TorchHook):
         """
         The function to be called when the hook triggers.
 
-        This method invokes the hook function provided during the initialization of the object. If no hook function 
-        was provided, it raises a NotImplementedError. This function always returns None, regardless of 
+        This method invokes the hook function provided during the initialization of the object. If no hook function
+        was provided, it raises a NotImplementedError. This function always returns None, regardless of
         the hook function's result.
 
         Args:
@@ -366,8 +366,8 @@ class ModuleForwardHook(TorchHook):
     """
     A hook class for PyTorch modules, specifically for forward operations.
 
-    This class is used to attach a hook to a PyTorch module's forward pass. The hook function can be provided 
-    directly as an argument or by overriding the `hook_function` method in a subclass. The hook will be executed 
+    This class is used to attach a hook to a PyTorch module's forward pass. The hook function can be provided
+    directly as an argument or by overriding the `hook_function` method in a subclass. The hook will be executed
     during the forward pass of the module.
 
     Attributes:
@@ -425,7 +425,7 @@ class ModuleForwardHook(TorchHook):
         """
         The function to be called during the module's forward pass.
 
-        This method invokes the hook function provided during initialization. If no hook function 
+        This method invokes the hook function provided during initialization. If no hook function
         was provided, it raises a NotImplementedError.
 
         Args:
@@ -450,7 +450,7 @@ class ModulePreForwardHook(TorchHook):
     """
     A hook class for PyTorch modules, specifically for pre-forward operations.
 
-    This class is used to attach a hook to a PyTorch module's pre-forward pass, allowing custom operations or 
+    This class is used to attach a hook to a PyTorch module's pre-forward pass, allowing custom operations or
     modifications before the forward method of the module is called.
 
     Attributes:
@@ -506,7 +506,7 @@ class ModulePreForwardHook(TorchHook):
         """
         The function to be called during the module's pre-forward pass.
 
-        This method invokes the hook function provided during initialization. If no hook function 
+        This method invokes the hook function provided during initialization. If no hook function
         was provided, it raises a NotImplementedError.
 
         Args:
@@ -530,8 +530,8 @@ class ModuleBackwardHook(TorchHook):
     """
     A hook class for PyTorch modules, specifically for backward operations.
 
-    This class is used to attach a hook to a PyTorch module's backward pass. The hook function can be provided 
-    either directly as an argument or by overriding the `hook_function` method in a subclass. The hook will be 
+    This class is used to attach a hook to a PyTorch module's backward pass. The hook function can be provided
+    either directly as an argument or by overriding the `hook_function` method in a subclass. The hook will be
     executed during the backward pass of the module.
 
     Attributes:
@@ -586,7 +586,7 @@ class ModuleBackwardHook(TorchHook):
         """
         The function to be called during the module's backward pass.
 
-        This method invokes the hook function provided during initialization. If no hook function 
+        This method invokes the hook function provided during initialization. If no hook function
         was provided, it raises a NotImplementedError. The hook can potentially modify the gradients.
 
         Args:
@@ -610,8 +610,8 @@ class ModulePreBackwardHook(TorchHook):
     """
     A hook class for PyTorch modules, specifically for operations before the backward pass.
 
-    This class is used to attach a hook to a PyTorch module right before its backward pass begins. The hook 
-    function can be provided either directly as an argument or by overriding the `hook_function` method in a 
+    This class is used to attach a hook to a PyTorch module right before its backward pass begins. The hook
+    function can be provided either directly as an argument or by overriding the `hook_function` method in a
     subclass. The hook will be executed just before the backward pass of the module.
 
     Attributes:
@@ -665,8 +665,8 @@ class ModulePreBackwardHook(TorchHook):
         """
         The function to be called just before the module's backward pass.
 
-        This method invokes the hook function provided during initialization. If no hook function 
-        was provided, it raises a NotImplementedError. The hook can potentially modify the gradients 
+        This method invokes the hook function provided during initialization. If no hook function
+        was provided, it raises a NotImplementedError. The hook can potentially modify the gradients
         before the backward pass.
 
         Args:

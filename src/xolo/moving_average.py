@@ -53,7 +53,7 @@ class ExponentialMovingAverage:
     """
     A class for calculating an Exponential Moving Average (EMA).
 
-    EMA applies more weight to recent data points, making it more responsive to new information. 
+    EMA applies more weight to recent data points, making it more responsive to new information.
     It uses a smoothing factor to determine the weight of older data points.
 
     Attributes:

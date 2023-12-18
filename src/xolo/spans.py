@@ -1,6 +1,6 @@
-from typing import Self, Optional
 from collections.abc import Iterator
-from dataclasses import dataclass, astuple
+from dataclasses import astuple, dataclass
+from typing import Optional, Self
 
 
 @dataclass(frozen=True, order=True)
