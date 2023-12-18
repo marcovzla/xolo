@@ -4,11 +4,17 @@ from numbers import Number
 from typing import Any, TypeVar
 
 Args = tuple[Any, ...]
-"""Defines a type for representing positional arguments in a function call, allowing for any number of arguments of any type."""
+"""
+Defines a type for representing positional arguments in a function call,
+allowing for any number of arguments of any type.
+"""
 
 
 KwArgs = dict[str, Any]
-"""Defines a type for representing keyword arguments in a function call, as a dictionary with string keys and values of any type."""
+"""
+Defines a type for representing keyword arguments in a function call,
+as a dictionary with string keys and values of any type.
+"""
 
 
 PathLike = str | os.PathLike[str]

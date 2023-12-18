@@ -120,7 +120,7 @@ def schema_from_callable(
     )
 
     # assemble schema
-    schema = dict(name=model.__name__)
+    schema = {'name': model.__name__}
     if 'description' in parameters:
         schema['description'] = parameters.pop('description')
     schema['parameters'] = parameters
@@ -155,12 +155,13 @@ def prepare_schema(
 
     Returns:
         dict[str, Any]: A prepared version of the input schema. The resulting dictionary will have resolved
-            JSON references (if 'replace_refs' is True), and unnecessary entries like 'title' (if 'keep_titles' is False)
-            will be removed or flattened for easier interpretation and use.
+            JSON references (if 'replace_refs' is True), and unnecessary entries like 'title'(if 'keep_titles'
+            is False) will be removed or flattened for easier interpretation and use.
 
     Raises:
         TypeError: If the schema is not a dictionary, TypeAdapter, or Pydantic model class, a TypeError is raised.
-        Other exceptions may also be raised during the processing of the schema, such as during JSON reference resolution.
+        Other exceptions may also be raised during the processing of the schema, such as during JSON
+        reference resolution.
 
     Note:
         - This function does not modify the original schema object but returns a new dictionary.
@@ -297,10 +298,10 @@ def new_model_from_callable(f: Callable, name: Optional[str] = None) -> type[Bas
         type[BaseModel]: The dynamically created Pydantic model class.
 
     Raises:
-        ValueError: If 'f' is not a Callable.
+        TypeError: If 'f' is not a Callable.
     """
     if not callable(f):
-        raise ValueError('The provided object is not a Callable')
+        raise TypeError('The provided object is not a Callable')
 
     if name is None:
         name = f.__name__

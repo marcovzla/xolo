@@ -3,11 +3,13 @@ import math
 import os
 import random
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Literal, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar
 
 import numpy as np
 import torch
-from torch.utils.hooks import RemovableHandle
+
+if TYPE_CHECKING:
+    from torch.utils.hooks import RemovableHandle
 
 from xolo.hooks import Hook, HookAlreadyRegisteredError, HookNotRegisteredError
 from xolo.typing import Args, KwArgs
@@ -50,7 +52,7 @@ def seed_worker(worker_id: int):
 
 
 
-def enable_full_determinism(seed: int, warn_only: bool = False):
+def enable_full_determinism(seed: int, *, warn_only: bool = False):
     """
     Enables full determinism in PyTorch operations for reproducible results.
 
@@ -103,20 +105,17 @@ def move_to_device(obj: T, device: Device) -> T:
         T: The object moved to the specified device, if applicable. If the object type is not
            directly handled by the function, the original object is returned unchanged.
     """
-    if isinstance(obj, torch.Tensor):
+    if isinstance(obj, torch.Tensor | torch.nn.Module):
         return obj.to(device)
-    elif isinstance(obj, torch.nn.Module):
-        return obj.to(device)
-    elif is_dataclass_instance(obj):
+    if is_dataclass_instance(obj):
         return obj.__class__(*(move_to_device(x, device) for x in dataclasses.astuple(obj)))
-    elif is_namedtuple_instance(obj):
+    if is_namedtuple_instance(obj):
         return obj.__class__(*(move_to_device(x, device) for x in obj))
-    elif isinstance(obj, Sequence):
+    if isinstance(obj, Sequence):
         return obj.__class__(move_to_device(x, device) for x in obj)
-    elif isinstance(obj, Mapping):
+    if isinstance(obj, Mapping):
         return obj.__class__((k, move_to_device(v, device)) for k, v in obj.items())
-    else:
-        return obj
+    return obj
 
 
 
@@ -320,8 +319,8 @@ class TensorPostAccumulateGradHook(TorchHook):
 
         Args:
             tensor (torch.Tensor): The tensor to attach the hook to.
-            hook_function (Optional[TensorPostAccumulateGradHookCallable]): An optional callable to be invoked when the hook triggers.
-                If not provided, the `hook_function` method must be overridden.
+            hook_function (Optional[TensorPostAccumulateGradHookCallable]): An optional callable to be invoked
+                when the hook triggers. If not provided, the `hook_function` method must be overridden.
         """
         super().__init__()
         self.tensor = tensor
@@ -387,9 +386,10 @@ class ModuleForwardHook(TorchHook):
 
         Args:
             module (torch.nn.Module): The module to attach the hook to.
-            prepend (bool, optional): If True, the hook is added to the beginning of the hook list. Defaults to False.
-            hook_function (Optional[ModuleForwardHookCallable], optional): An optional callable invoked during the module's forward pass.
-                If not provided, the `hook_function` method must be overridden.
+            prepend (bool, optional): If True, the hook is added to the beginning of the hook list.
+                Defaults to False.
+            hook_function (Optional[ModuleForwardHookCallable], optional): An optional callable invoked
+                during the module's forward pass. If not provided, the `hook_function` method must be overridden.
         """
         super().__init__()
         self.module = module
@@ -470,8 +470,10 @@ class ModulePreForwardHook(TorchHook):
 
         Args:
             module (torch.nn.Module): The module to attach the hook to.
-            prepend (bool, optional): If True, the hook is added to the beginning of the hook list. Defaults to False.
-            hook_function (Optional[ModulePreForwardHookCallable], optional): An optional callable invoked during the module's pre-forward pass.
+            prepend (bool, optional): If True, the hook is added to the beginning of the hook list.
+                Defaults to False.
+            hook_function (Optional[ModulePreForwardHookCallable], optional): An optional callable invoked
+                during the module's pre-forward pass.
         """
         super().__init__()
         self.module = module
@@ -515,7 +517,8 @@ class ModulePreForwardHook(TorchHook):
             kwargs (KwArgs): Keyword arguments passed to the module's forward method.
 
         Returns:
-            Optional[Tuple[Any, Dict[str, Any]]]: The result of the hook function, which can modify the arguments passed to the forward method.
+            Optional[Tuple[Any, Dict[str, Any]]]: The result of the hook function, which can modify
+            the arguments passed to the forward method.
 
         Raises:
             NotImplementedError: If no hook function is provided.
@@ -551,8 +554,10 @@ class ModuleBackwardHook(TorchHook):
 
         Args:
             module (torch.nn.Module): The module to attach the hook to.
-            prepend (bool, optional): If True, the hook is added to the beginning of the hook list. Defaults to False.
-            hook_function (Optional[ModuleBackwardHookCallable], optional): An optional callable invoked during the module's backward pass.
+            prepend (bool, optional): If True, the hook is added to the beginning of the hook list.
+                Defaults to False.
+            hook_function (Optional[ModuleBackwardHookCallable], optional): An optional callable
+                invoked during the module's backward pass.
         """
         super().__init__()
         self.module = module
@@ -631,8 +636,10 @@ class ModulePreBackwardHook(TorchHook):
 
         Args:
             module (torch.nn.Module): The module to attach the hook to.
-            prepend (bool, optional): If True, the hook is added to the beginning of the hook list. Defaults to False.
-            hook_function (Optional[ModulePreBackwardHookCallable], optional): An optional callable invoked just before the module's backward pass.
+            prepend (bool, optional): If True, the hook is added to the beginning of the hook list.
+                Defaults to False.
+            hook_function (Optional[ModulePreBackwardHookCallable], optional): An optional callable invoked
+                just before the module's backward pass.
         """
         super().__init__()
         self.module = module

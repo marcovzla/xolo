@@ -119,7 +119,7 @@ def split_symbol(symbol: str, style: CaseStyle) -> list[str]:
             assert_never(style)
 
 
-def join_symbol(parts: Iterable[str], style: CaseStyle, preserve_case: bool = False) -> str:
+def join_symbol(parts: Iterable[str], style: CaseStyle, *, preserve_case: bool = False) -> str:
     """
     Joins the parts of a symbol into a single string based on the specified case style.
 
