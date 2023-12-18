@@ -18,7 +18,7 @@ class PeekableIterator(Generic[A]):
     def __init__(self, items: Iterable[A]):
         """Initialize the PeekableIterator with an iterable."""
         self._iter = iter(items)
-        self._cache = deque()
+        self._cache: deque[A] = deque()
 
     def __iter__(self) -> Self:
         """Return the iterator itself."""
@@ -32,7 +32,7 @@ class PeekableIterator(Generic[A]):
         """Return True if there are more items to iterate over."""
         return self.has_next()
 
-    def _cache_next(self) -> bool:
+    def _cache_next(self):
         """Cache the next item from the iterator, if available."""
         try:
             self._cache.append(next(self._iter))
@@ -41,7 +41,9 @@ class PeekableIterator(Generic[A]):
 
     def has_next(self) -> bool:
         """Check if there are more items to iterate over."""
-        return self._cache or self._cache_next()
+        if not self._cache:
+            self._cache_next()
+        return bool(self._cache)
 
     @overload
     def peek(self) -> A:
@@ -77,7 +79,7 @@ class PeekableIterator(Generic[A]):
 
     def prepend(self, *items: A):
         """Prepend items to the beginning of the iterator."""
-        self._cache.appendleft(reversed(items))
+        self._cache.extendleft(reversed(items))
 
     def append(self, *items: A):
         """Append items to the end of the iterator."""
