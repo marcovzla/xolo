@@ -31,18 +31,18 @@ class PeekableIterator(Generic[A]):
         """Return True if there are more items to iterate over."""
         return self.has_next()
 
-    def _cache_next(self):
+    def _cache_next(self) -> bool:
         """Cache the next item from the iterator, if available."""
         try:
             self._cache.append(next(self._iter))
         except StopIteration:
-            pass
+            return False
+        else:
+            return True
 
     def has_next(self) -> bool:
         """Check if there are more items to iterate over."""
-        if not self._cache:
-            self._cache_next()
-        return bool(self._cache)
+        return bool(self._cache) or self._cache_next()
 
     @overload
     def peek(self) -> A:
@@ -71,10 +71,9 @@ class PeekableIterator(Generic[A]):
         """
         if self.has_next():
             return self._cache[0]
-        elif default is not _sentinel:
+        if default is not _sentinel:
             return default
-        else:
-            raise StopIteration
+        raise StopIteration
 
     def prepend(self, *items: A):
         """Prepend items to the beginning of the iterator."""
