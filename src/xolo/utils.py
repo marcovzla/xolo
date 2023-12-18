@@ -58,11 +58,11 @@ def is_namedtuple_type(obj) -> bool:
         bool: True if 'obj' is a namedtuple type, False otherwise.
     """
     return (
-        isinstance(obj, type) and
-        issubclass(obj, tuple) and
-        hasattr(obj, '_fields') and
-        hasattr(obj, '_make') and
-        hasattr(obj, '_asdict')
+        isinstance(obj, type)
+        and issubclass(obj, tuple)
+        and hasattr(obj, '_fields')
+        and hasattr(obj, '_make')
+        and hasattr(obj, '_asdict')
     )
 
 
@@ -84,12 +84,12 @@ def is_namedtuple_instance(obj) -> bool:
         bool: True if 'obj' is an instance of a namedtuple, False otherwise.
     """
     return (
-        isinstance(obj, tuple) and
-        hasattr(obj, '_fields') and
-        isinstance(obj._fields, tuple) and
-        all(isinstance(field, str) for field in obj._fields) and
-        hasattr(obj, '_asdict') and
-        callable(obj._asdict)
+        isinstance(obj, tuple)
+        and hasattr(obj, '_fields')
+        and isinstance(obj._fields, tuple)
+        and all(isinstance(field, str) for field in obj._fields)
+        and hasattr(obj, '_asdict')
+        and callable(obj._asdict)
     )
 
 
