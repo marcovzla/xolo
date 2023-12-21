@@ -312,7 +312,7 @@ def new_model_from_callable(f: Callable, name: Optional[str] = None) -> type[Bas
 
     fields = {
         p.name: {
-            'annotation': p.annotation,
+            'annotation': prepare_type_for_pydantic(p.annotation),
             'default': p.default if p.default != inspect.Parameter.empty else Ellipsis,
             'description': param_descriptions.get(p.name),
         }
@@ -352,7 +352,7 @@ def new_model_from_dataclass(c: type[Any], name: Optional[str] = None) -> type[B
 
     fields = {
         f.name: {
-            'annotation': handle_dataclass_field_type(f.type),
+            'annotation': prepare_type_for_pydantic(f.type),
             'default': handle_dataclass_field_default(f.default, f.default_factory),
             'description': param_descriptions.get(f.name),
         }
@@ -363,36 +363,32 @@ def new_model_from_dataclass(c: type[Any], name: Optional[str] = None) -> type[B
 
 
 
-def handle_dataclass_field_type(c: type[Any]) -> type[Any]:
+def prepare_type_for_pydantic(c: type[Any]) -> type[Any]:
     """
-    Converts the type of a dataclass field for compatibility with Pydantic models.
+    Prepares a given type for compatibility with Pydantic models.
 
-    This function plays a critical role in adapting the types of fields within a dataclass
-    to be suitable for use in Pydantic models. It efficiently handles a variety of field types,
-    including simple types, nested dataclasses, and parameterized types (e.g., List[int]).
-    For nested dataclasses, it employs the 'new_model_from_dataclass' function to achieve
-    conversion. For parameterized types, it carefully preserves their structural integrity
-    during the conversion process.
+    This function is designed to adapt a variety of types, making them suitable for use 
+    in Pydantic models. It effectively handles not only dataclass field types but also 
+    other complex types, including simple types, nested structures, and parameterized 
+    types (e.g., List[int]). For types that are dataclasses, it employs the 
+    'new_model_from_dataclass' function for conversion. When dealing with parameterized 
+    types, it ensures the integrity of their structure is preserved during the adaptation 
+    process.
 
     Args:
-        c (type[Any]): The type of the dataclass field to be converted. This can include simple
-                       types, nested dataclasses, or parameterized types.
+        c (type[Any]): The type to be prepared. This can include simple types, nested 
+                       structures, dataclasses, or parameterized types.
 
     Returns:
-        type[Any]: The converted field type, now optimized for integration with Pydantic models.
-                   This ensures compatibility with Pydantic's requirements while retaining the
-                   original field type's structure and characteristics.
-
-    Note:
-        This function is primarily used within the 'new_model_from_dataclass' function as a means
-        to process each field's type in a dataclass, facilitating the comprehensive conversion
-        to a Pydantic model.
+        type[Any]: The prepared type, optimized for integration with Pydantic models.
+                   This ensures compatibility with Pydantic's requirements, while 
+                   retaining the original type's structure and characteristics.
     """
     if is_dataclass_type(c):
         return new_model_from_dataclass(c)
     elif isinstance(c, GenericAlias):
         tpe = get_origin(c)
-        args = tuple(handle_dataclass_field_type(arg) for arg in get_args(c))
+        args = tuple(prepare_type_for_pydantic(arg) for arg in get_args(c))
         return tpe[args]
     else:
         return c
