@@ -431,8 +431,9 @@ def handle_dataclass_field_default(default: Any, default_factory: Any) -> Any:
 
 
 
-# Precompiled whitespace regular expression for efficiency
 WS = re.compile(r'\s+')
+"""Precompiled whitespace regular expression."""
+
 
 def parse_docstring(obj: Any) -> tuple[Optional[str], dict[str, str]]:
     """
