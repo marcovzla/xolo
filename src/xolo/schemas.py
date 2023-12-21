@@ -1,5 +1,6 @@
 import dataclasses
 import inspect
+import re
 from collections.abc import Callable
 from types import GenericAlias
 from typing import Any, Optional, Union, get_args, get_origin
@@ -307,9 +308,7 @@ def new_model_from_callable(f: Callable, name: Optional[str] = None) -> type[Bas
     if name is None:
         name = f.__name__
 
-    doc = docstring_parser.parse(inspect.getdoc(f))
-    description = doc.short_description or doc.long_description
-    param_descriptions = {p.arg_name: p.description for p in doc.params}
+    description, param_descriptions = parse_docstring(f)
 
     fields = {
         p.name: {
@@ -349,9 +348,7 @@ def new_model_from_dataclass(c: type[Any], name: Optional[str] = None) -> type[B
     if name is None:
         name = c.__name__
 
-    doc = docstring_parser.parse(inspect.getdoc(c))
-    description = doc.short_description or doc.long_description
-    param_descriptions = {p.arg_name: p.description for p in doc.params}
+    description, param_descriptions = parse_docstring(c)
 
     fields = {
         f.name: {
@@ -431,3 +428,54 @@ def handle_dataclass_field_default(default: Any, default_factory: Any) -> Any:
         return default_factory()
     else:
         return ...
+
+
+
+# Precompiled whitespace regular expression for efficiency
+WS = re.compile(r'\s+')
+
+def parse_docstring(obj: Any) -> tuple[Optional[str], dict[str, str]]:
+    """
+    Parses the docstring of a given Python object and extracts its short description and 
+    parameter descriptions.
+
+    This function employs the `docstring_parser` library to parse the docstring of the 
+    provided object. It then cleans up the extracted text by replacing multiple 
+    whitespace characters with a single space. The function returns a tuple containing 
+    the short description of the object and a dictionary of its parameter descriptions. 
+    If a description is not provided for a parameter, that parameter is excluded from 
+    the dictionary. In case of a parsing error or if the object has no docstring, the 
+    function returns None for the description and an empty dictionary for parameter 
+    descriptions.
+
+    Args:
+        obj (Any): The object whose docstring is to be parsed. This can be any Python 
+                   object with a docstring, such as a function, class, or method.
+
+    Returns:
+        tuple[Optional[str], dict[str, str]]: A tuple where the first element is the 
+        short description of the object or None if not available. The second element is 
+        a dictionary where keys are parameter names and values are their descriptions.
+        If there are no parameters or the docstring is unavailable, this dictionary 
+        will be empty.
+
+    Raises:
+        This function suppresses all exceptions and instead returns None and an empty 
+        dictionary in case of any error during parsing.
+
+    Note:
+        This function assumes that the docstrings are formatted in a way that is 
+        compatible with the `docstring_parser` library. Non-standard docstring formats 
+        may not be parsed correctly.
+    """
+    try:
+        doc = docstring_parser.parse(inspect.getdoc(obj))
+        description = WS.sub(' ', doc.short_description) if doc.short_description else None
+        param_descriptions = {
+            p.arg_name: WS.sub(' ', p.description)
+            for p in doc.params
+            if p.description
+        }
+        return description, param_descriptions
+    except:
+        return None, {}
