@@ -353,7 +353,7 @@ def new_model_from_dataclass(c: type[Any], name: Optional[str] = None) -> type[B
             'default': handle_dataclass_field_default(f.default, f.default_factory),
             'description': param_descriptions.get(f.name),
         }
-        for f in c.__dataclass_fields__.values()
+        for f in dataclasses.fields(c)
     }
 
     return new_model(name, fields, model_description=description)
