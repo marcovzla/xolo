@@ -1,7 +1,7 @@
 import asyncio
+import itertools
 from collections import deque
 from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator
-from itertools import chain
 from typing import Generic, Self, TypeVar, overload
 
 A = TypeVar('A')
@@ -76,7 +76,7 @@ class PeekableIterator(Generic[A]):
 
     def append(self, *items: A):
         """Append items to the end of the iterator."""
-        self._iter = chain(self._iter, items)
+        self._iter = itertools.chain(self._iter, items)
 
 
 
