@@ -61,11 +61,8 @@ def new_schema(
     if not types:
         raise ValueError('At least one type argument is required to create a schema.')
 
-    # convert dataclasses to BaseModel
-    types = [
-        new_model_from_dataclass(t) if is_dataclass_type(t) else t
-        for t in types
-    ]
+    # prepare types
+    types = [prepare_type_for_pydantic(t) for t in types]
 
     # merge types
     single_type = types[0] if len(types) == 1 else Union[*types]  # type: ignore
