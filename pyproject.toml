@@ -81,3 +81,8 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.ruff.lint]
+ignore = [
+  "UP007", # until https://github.com/astral-sh/ruff/issues/4858 gets resolved
+]

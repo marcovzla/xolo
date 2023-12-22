@@ -158,7 +158,7 @@ def copy_function(f: C) -> C:
         f_copy.__kwdefaults__ = f.__kwdefaults__
         return functools.update_wrapper(f_copy, f)
 
-    elif isinstance(f, MethodType):
+    if isinstance(f, MethodType):
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -169,5 +169,4 @@ def copy_function(f: C) -> C:
         wrapper.__kwdefaults__ = f.__func__.__kwdefaults__
         return wrapper
 
-    else:
-        raise TypeError(f'Expected FunctionType or MethodType, got {type(f)}')
+    raise TypeError(f'Expected FunctionType or MethodType, got {type(f)}')

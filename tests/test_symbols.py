@@ -1,4 +1,4 @@
-from xolo.symbols import *
+from xolo.symbols import convert_case_style
 
 
 def test_convert_pascal_case_to_kebab_case():

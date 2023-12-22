@@ -364,31 +364,32 @@ def prepare_type_for_pydantic(c: type[Any]) -> type[Any]:
     """
     Prepares a given type for compatibility with Pydantic models.
 
-    This function is designed to adapt a variety of types, making them suitable for use 
-    in Pydantic models. It effectively handles not only dataclass field types but also 
-    other complex types, including simple types, nested structures, and parameterized 
-    types (e.g., List[int]). For types that are dataclasses, it employs the 
-    'new_model_from_dataclass' function for conversion. When dealing with parameterized 
-    types, it ensures the integrity of their structure is preserved during the adaptation 
+    This function is designed to adapt a variety of types, making them suitable for use
+    in Pydantic models. It effectively handles not only dataclass field types but also
+    other complex types, including simple types, nested structures, and parameterized
+    types (e.g., List[int]). For types that are dataclasses, it employs the
+    'new_model_from_dataclass' function for conversion. When dealing with parameterized
+    types, it ensures the integrity of their structure is preserved during the adaptation
     process.
 
     Args:
-        c (type[Any]): The type to be prepared. This can include simple types, nested 
+        c (type[Any]): The type to be prepared. This can include simple types, nested
                        structures, dataclasses, or parameterized types.
 
     Returns:
         type[Any]: The prepared type, optimized for integration with Pydantic models.
-                   This ensures compatibility with Pydantic's requirements, while 
+                   This ensures compatibility with Pydantic's requirements, while
                    retaining the original type's structure and characteristics.
     """
     if is_dataclass_type(c):
         return new_model_from_dataclass(c)
-    elif isinstance(c, GenericAlias):
+
+    if isinstance(c, GenericAlias):
         tpe = get_origin(c)
         args = tuple(prepare_type_for_pydantic(arg) for arg in get_args(c))
         return tpe[args]
-    else:
-        return c
+
+    return c
 
 
 
@@ -417,10 +418,11 @@ def handle_dataclass_field_default(default: Any, default_factory: Any) -> Any:
     """
     if default != dataclasses.MISSING:
         return default
-    elif default_factory != dataclasses.MISSING:
+
+    if default_factory != dataclasses.MISSING:
         return default_factory()
-    else:
-        return ...
+
+    return ...
 
 
 
@@ -430,36 +432,36 @@ WS = re.compile(r'\s+')
 
 def parse_docstring(obj: Any) -> tuple[Optional[str], dict[str, str]]:
     """
-    Parses the docstring of a given Python object and extracts its short description and 
+    Parses the docstring of a given Python object and extracts its short description and
     parameter descriptions.
 
-    This function employs the `docstring_parser` library to parse the docstring of the 
-    provided object. It then cleans up the extracted text by replacing multiple 
-    whitespace characters with a single space. The function returns a tuple containing 
-    the short description of the object and a dictionary of its parameter descriptions. 
-    If a description is not provided for a parameter, that parameter is excluded from 
-    the dictionary. In case of a parsing error or if the object has no docstring, the 
-    function returns None for the description and an empty dictionary for parameter 
+    This function employs the `docstring_parser` library to parse the docstring of the
+    provided object. It then cleans up the extracted text by replacing multiple
+    whitespace characters with a single space. The function returns a tuple containing
+    the short description of the object and a dictionary of its parameter descriptions.
+    If a description is not provided for a parameter, that parameter is excluded from
+    the dictionary. In case of a parsing error or if the object has no docstring, the
+    function returns None for the description and an empty dictionary for parameter
     descriptions.
 
     Args:
-        obj (Any): The object whose docstring is to be parsed. This can be any Python 
+        obj (Any): The object whose docstring is to be parsed. This can be any Python
                    object with a docstring, such as a function, class, or method.
 
     Returns:
-        tuple[Optional[str], dict[str, str]]: A tuple where the first element is the 
-        short description of the object or None if not available. The second element is 
+        tuple[Optional[str], dict[str, str]]: A tuple where the first element is the
+        short description of the object or None if not available. The second element is
         a dictionary where keys are parameter names and values are their descriptions.
-        If there are no parameters or the docstring is unavailable, this dictionary 
+        If there are no parameters or the docstring is unavailable, this dictionary
         will be empty.
 
     Raises:
-        This function suppresses all exceptions and instead returns None and an empty 
+        This function suppresses all exceptions and instead returns None and an empty
         dictionary in case of any error during parsing.
 
     Note:
-        This function assumes that the docstrings are formatted in a way that is 
-        compatible with the `docstring_parser` library. Non-standard docstring formats 
+        This function assumes that the docstrings are formatted in a way that is
+        compatible with the `docstring_parser` library. Non-standard docstring formats
         may not be parsed correctly.
     """
     try:
