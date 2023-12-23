@@ -29,9 +29,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/marcovzla/xolo#readme"
-Issues = "https://github.com/marcovzla/xolo/issues"
-Source = "https://github.com/marcovzla/xolo"
+Homepage = "https://github.com/marcovzla/xolo"
 
 [tool.hatch.version]
 path = "src/xolo/__about__.py"
