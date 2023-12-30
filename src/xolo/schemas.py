@@ -209,8 +209,13 @@ def delete_entry(obj: Any, name: str):
     if isinstance(obj, dict):
         if name in obj:
             del obj[name]
-        for x in obj.values():
-            delete_entry(x, name)
+        for k, v in obj.items():
+            # don't delete entries from properties dictionary
+            if k == 'properties':
+                for x in v.values():
+                    delete_entry(x, name)
+            else:
+                delete_entry(v, name)
     elif isinstance(obj, list):
         for x in obj:
             delete_entry(x, name)
