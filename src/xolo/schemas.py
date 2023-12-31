@@ -10,7 +10,6 @@ import jsonref
 from pydantic import BaseModel, TypeAdapter, create_model
 from pydantic.fields import Field
 
-from xolo.symbols import prepare_symbol
 from xolo.utils import is_dataclass_type
 
 
@@ -274,14 +273,13 @@ def new_model(
     field_definitions = {}
 
     for name, meta in (fields.items() if isinstance(fields, dict) else zip(fields, [None] * len(fields))):
-        safe_name = prepare_symbol(name)
         field_args = meta if isinstance(meta, dict) else {}
         annotation = field_args.pop('annotation', default_annotation)
         default = field_args.pop('default', default_value)
-        field_definitions[safe_name] = (annotation, Field(default, **field_args))
+        field_definitions[name] = (annotation, Field(default, **field_args))
 
     return create_model(
-        prepare_symbol(model_name, style='pascal'),
+        model_name,
         __doc__=model_description,
         **field_definitions,
     )
