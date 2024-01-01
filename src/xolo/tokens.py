@@ -196,7 +196,7 @@ def convert_labels(labels: Sequence[str], from_schema: LabelingSchema, to_schema
 
 
 
-def parse_token_label(label: str, sep: str = '-') -> tuple[Optional[str], Optional[str]]:
+def parse_token_label(label: str, sep: str = '-') -> tuple[str, Optional[str]]:
     """
     Parse a token label into its constituent parts (tag and entity) based on a given separator.
 
@@ -210,21 +210,20 @@ def parse_token_label(label: str, sep: str = '-') -> tuple[Optional[str], Option
         sep (str, optional): The separator used to split the label into tag and entity. Defaults to '-'.
 
     Returns:
-        tuple[Optional[str], Optional[str]]: A tuple where the first element is the tag and the second element
+        tuple[str, Optional[str]]: A tuple where the first element is the tag and the second element
         is the entity type. If the label does not contain a separator, the function defaults to ('I', label).
 
-    Notes:
-        - If the label is empty, both the tag and entity are returned as None.
-        - If the label contains the separator, it's split into tag and entity.
-        - If the label does not contain the separator but is a valid token tag, it's assumed to be a tag with no entity.
-        - If the label is not a valid tag and does not contain the separator, it's treated as an entity with an 'I' tag.
+    Raises:
+        ValueError: If the label is empty.
     """
     if not label:
-        return None, None
-    if sep in label:
-        return tuple(label.split(sep=sep, maxsplit=1))
+        raise ValueError('label cannot be empty')
     if label in VALID_TOKEN_TAGS:
         return label, None
+    if sep in label:
+        tag, entity = label.split(sep, maxsplit=1)
+        if tag in VALID_TOKEN_TAGS:
+            return tag, entity
     return 'I', label
 
 
