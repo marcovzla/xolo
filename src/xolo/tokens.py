@@ -9,24 +9,44 @@ import regex
 from xolo.spans import Span
 
 
-def merge_tokens(tokens: Sequence[str]) -> str:
+def merge_tokens(
+        tokens: Sequence[str],
+        *,
+        keep_ptb_style_quotes: bool = False,
+        keep_html_entities: bool = False,
+) -> str:
     """
     Merge a sequence of tokens into a single string, correcting spacing around punctuation and quotes.
 
-    This function handles special cases such as unpaired quotation marks, contractions, and various
-    punctuation marks, ensuring that the resultant string is formatted correctly.
+    This function combines a sequence of tokens into a single string, handling special cases like
+    unpaired quotation marks, contractions, and various punctuation marks to ensure proper formatting.
+    It optionally preserves Penn Treebank (PTB) style quotes and HTML entities based on the provided arguments.
 
     Args:
-        tokens (Sequence[str]): A sequence of string tokens to merge.
+        tokens (Sequence[str]): A sequence of string tokens to be merged into a single string.
+        keep_ptb_style_quotes (bool, optional): If True, retains Penn Treebank style quotes in the
+            output string. Defaults to False, which converts them to standard quotation marks.
+        keep_html_entities (bool, optional): If True, retains HTML entities (like `&amp;`, `&lt;`, etc.)
+            in the output string. Defaults to False, which converts them to their corresponding characters.
 
     Returns:
-        str: The merged string with corrected punctuation and spacing.
+        str: The merged string with corrected punctuation, spacing, and optional formatting based on the arguments.
     """
     tokens = fix_quotes(tokens)
     text = ' '.join(tokens)
-    text = correct_spacing(text)
+
+    # handle html entities before correcting spaces
     text = fix_html_entities(text)
-    text = replace_ptb_style_quotes(text)
+    if not keep_html_entities:
+        text = html.unescape(text)
+
+    # correct spacing based on heuristics
+    text = correct_spacing(text)
+
+    # replace ptb quotes
+    if not keep_ptb_style_quotes:
+        text = replace_ptb_style_quotes(text)
+
     return text
 
 
