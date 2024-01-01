@@ -1,3 +1,4 @@
+import html
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
@@ -24,6 +25,7 @@ def merge_tokens(tokens: Sequence[str]) -> str:
     tokens = fix_quotes(tokens)
     text = ' '.join(tokens)
     text = correct_spacing(text)
+    text = fix_html_entities(text)
     text = replace_ptb_style_quotes(text)
     return text
 
@@ -85,6 +87,45 @@ def correct_spacing(text: str) -> str:
     # Correct space for currency and other symbols
     text = regex.sub(r'([#$])\s', r'\1', text)
 
+    return text
+
+
+
+NAMED_HTML_ENTITY = regex.compile(r'&\s*(\w+)\s*;')
+DECIMAL_HTML_ENTITY = regex.compile(r'&\s*#\s*([0-9]+)\s*;')
+HEXADECIMAL_HTML_ENTITY = regex.compile(r'&\s*#\s*([xX][0-9a-fA-F]+)\s*;')
+
+def _fix_named_html_entity(m: regex.Match[str]) -> str:
+    value = m.group(1)
+    if value in html.entities.name2codepoint:
+        return '&' + value + ';'
+    return m.group()
+
+def _fix_decimal_html_entity(m: regex.Match[str]) -> str:
+    value = m.group(1)
+    if 0 <= int(value) <= 0x10ffff:
+        return '&#' + value + ';'
+    return m.group()
+
+def _fix_hexadecimal_html_entity(m: regex.Match[str]) -> str:
+    value = m.group(1)
+    if 0 <= int(value[1:], base=16) <= 0x10ffff:
+        return '&#' + value + ';'
+    return m.group()
+
+def fix_html_entities(text: str) -> str:
+    """
+    Process a string, converting any malformed HTML entities to their correct forms.
+
+    Args:
+        text (str): The input string containing potential HTML entities.
+
+    Returns:
+        str: The string with HTML entities corrected.
+    """
+    text = NAMED_HTML_ENTITY.sub(_fix_named_html_entity, text)
+    text = DECIMAL_HTML_ENTITY.sub(_fix_decimal_html_entity, text)
+    text = HEXADECIMAL_HTML_ENTITY.sub(_fix_hexadecimal_html_entity, text)
     return text
 
 
