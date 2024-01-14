@@ -50,6 +50,17 @@ cov = [
   "test-cov",
   "cov-report",
 ]
+release = [
+  "hatch version release",
+  "git add src/xolo/__about__.py",
+  "git commit -m 'release version'",
+  "hatch build",
+  "hatch publish",
+  "hatch version micro,dev",
+  "git add src/xolo/__about__.py",
+  "git commit -m 'dev version'",
+  "git push",
+]
 
 [[tool.hatch.envs.all.matrix]]
 python = ["3.11", "3.12"]
